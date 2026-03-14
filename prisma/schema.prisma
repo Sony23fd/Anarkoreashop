@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  phone     String?  @unique
+  email     String?  @unique
+  password  String?  
+  name      String?
+  role      Role     @default(CUSTOMER) // CUSTOMER, ADMIN, SHOPPER
+  orders    Order[]
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+  SHOPPER
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  productNumber    Int      @unique @default(autoincrement()) // e.g. #168
+  name             String
+  description      String?
+  imageUrl         String?
+  price            Decimal  // Price to pay
+  sourceLink       String?        // Холбоос (Facebook link etc)
+  isActive         Boolean        @default(true) // Идэвхтэй эсэх
+  targetQuantity   Int            @default(0)   // ЗОРИЛТОТ ТОО
+  remainingQuantity Int           @default(0)   // ҮЛДЭГДЭЛ ТОO
+  cargoFeeStatus   String?  // kargo awahgui, etc.
+  weight           Decimal? @default(0.0) // Жин
+  status           ProductStatus @default(OPEN)
+  
+  orders           Order[]
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+enum ProductStatus {
+  OPEN       // Orders are being accepted
+  CLOSED     // Sold out or time passed
+  SHIPPED    // Batch shipped to Mongolia
+  ARRIVED    // Batch arrived in UB
+}
+
+model OrderCategory {
+  id          String   @id @default(cuid())
+  name        String   // e.g. "Бэлэн Монголд байгаа бараа", "2026.03 сар"
+  orders      Order[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model OrderStatusType {
+  id          String   @id @default(cuid())
+  name        String   // e.g. "захиалга баталгаажсан", "улаанбаатарт ирсэн"
+  isFinal     Boolean  @default(false) // Сүүлийн статус мөн эсэх
+  orders      Order[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id             String   @id @default(cuid())
+  orderNumber    Int      @unique @default(autoincrement()) // e.g. 1782
+  
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id])
+  
+  categoryId     String?
+  category       OrderCategory? @relation(fields: [categoryId], references: [id])
+  
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id])
+  
+  customerName   String   // Otgoo Jargal
+  customerPhone  String   // 99723599
+  accountNumber  String?  // Paid from account e.g. 5071443386
+  quantity       Int      @default(1)
+  
+  arrivalDate    DateTime? // ирэх өдөр
+  deliveryDate   DateTime? // хүргүүлэх өдөр
+  deliveryAddress String?  // Хаяг
+  
+  statusId       String?
+  status         OrderStatusType? @relation(fields: [statusId], references: [id])
+  
+  cargoFee       Decimal?    @default(0)
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
