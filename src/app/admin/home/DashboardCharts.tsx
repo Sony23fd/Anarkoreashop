@@ -30,7 +30,7 @@ export function DashboardCharts({ revenueData, topProducts }: ChartData) {
                   tickFormatter={(value) => `₮${(value / 1000).toFixed(0)}k`}
                 />
                 <Tooltip 
-                  formatter={(value: number) => [`₮${value.toLocaleString()}`, 'Орлого']}
+                  formatter={(value: any) => [`₮${value.toLocaleString()}`, 'Орлого']}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
                 <Line 
@@ -61,7 +61,7 @@ export function DashboardCharts({ revenueData, topProducts }: ChartData) {
                 <XAxis type="number" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis dataKey="name" type="category" width={100} stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                 <Tooltip 
-                  formatter={(value: number) => [`${value} ш`, 'Борлуулалт']}
+                  formatter={(value: any) => [`${value} ш`, 'Борлуулалт']}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
                 <Bar dataKey="sales" fill="#818cf8" radius={[0, 4, 4, 0]} barSize={24} />
