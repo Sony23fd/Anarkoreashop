@@ -77,9 +77,11 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             {deliveryFee > 0 && (
               <div className="flex justify-between items-center border-t border-slate-100 pt-3">
                 <span className="text-slate-500 text-sm flex items-center gap-1.5">
-                  <Truck className="w-4 h-4 text-indigo-400" /> Карго үнэ:
+                  <Truck className="w-4 h-4 text-indigo-400" /> Хүргэлтийн үнэ:
                 </span>
-                <span className="font-semibold text-slate-700">+₮{deliveryFee.toLocaleString()}</span>
+                <span className="font-semibold text-slate-800">
+                  {Number(batch.deliveryFee) > 0 ? `₮${Number(batch.deliveryFee).toLocaleString()}` : "Үнэгүй"}
+                </span>
               </div>
             )}
             
