@@ -6,6 +6,8 @@ import Link from "next/link"
 import Image from "next/image"
 import { db } from "@/lib/db"
 
+import { AnimatedHeroBackground } from "@/components/storefront/home/AnimatedHeroBackground"
+
 export const dynamic = "force-dynamic"
 
 export default async function StorefrontLayout({ children }: { children: ReactNode }) {
@@ -19,9 +21,13 @@ export default async function StorefrontLayout({ children }: { children: ReactNo
   return (
     <CartProvider>
       {/* Navigation / Top Header */}
-      <header className="bg-white sticky top-0 z-40 border-b border-slate-100/80 shadow-sm/50 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2">
+      <header className="sticky top-0 z-40 border-b border-indigo-800/50 shadow-md relative overflow-hidden">
+        
+        {/* Animated Background */}
+        <AnimatedHeroBackground bgColor="#3c27c4" />
+
+        <div className="relative z-10 max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <Link href="/" className="flex items-center gap-2 group">
             {siteLogo ? (
               <div className="relative h-10 w-auto min-w-[120px] flex items-center">
                 <Image 
@@ -29,31 +35,31 @@ export default async function StorefrontLayout({ children }: { children: ReactNo
                   alt="AnarKorea Logo" 
                   width={150} 
                   height={40} 
-                  className="object-contain max-h-12 w-auto"
+                  className="object-contain max-h-12 w-auto drop-shadow-sm"
                 />
               </div>
             ) : (
               <>
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4e3dc7] to-indigo-400 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-bold text-lg shadow-sm border border-white/10 group-hover:bg-white/30 transition-colors">
                   A
                 </div>
-                <span className="font-extrabold text-2xl tracking-tight text-slate-800">
-                  Anar<span className="text-[#4e3dc7]">Korea</span>
+                <span className="font-extrabold text-2xl tracking-tight text-white">
+                  Anar<span className="text-indigo-300">Korea</span>
                 </span>
               </>
             )}
           </Link>
           
           <div className="flex items-center gap-4 w-full md:w-auto mt-2 md:mt-0">
-            <form action="/track" className="flex relative group w-full md:w-auto shadow-sm hover:shadow-md transition-shadow rounded-full">
+            <form action="/track" className="flex relative group w-full md:w-auto shadow-lg hover:shadow-xl transition-shadow rounded-full font-sans">
               <input
                 type="text"
                 name="account"
                 required
                 placeholder="Захиалгаа шалгах (данс: 500..)"
-                className="w-full md:w-80 lg:w-96 bg-slate-50 border border-slate-200 text-base px-6 py-3 rounded-full focus:outline-none focus:border-[#4e3dc7] focus:ring-1 focus:ring-[#4e3dc7] transition-all placeholder:text-slate-400 font-medium"
+                className="w-full md:w-80 lg:w-96 bg-white border-2 border-transparent text-slate-800 px-6 py-3.5 rounded-full focus:outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-300/30 transition-all placeholder:text-slate-400 font-medium"
               />
-              <button type="submit" className="absolute right-1.5 top-1.5 bottom-1.5 bg-[#4e3dc7] text-white px-6 rounded-full text-sm font-bold hover:bg-indigo-700 transition-colors shadow-sm">
+              <button type="submit" className="absolute right-1.5 top-1.5 bottom-1.5 bg-gradient-to-r from-indigo-600 to-[#3c27c4] text-white px-7 rounded-full text-sm font-bold hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all">
                 Шалгах
               </button>
             </form>
