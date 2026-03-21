@@ -6,9 +6,16 @@ import Link from "next/link"
 import Image from "next/image"
 import { db } from "@/lib/db"
 
+export const dynamic = "force-dynamic"
+
 export default async function StorefrontLayout({ children }: { children: ReactNode }) {
-  const logoSetting = await db.shopSettings.findUnique({ where: { key: "site_logo" } })
-  const siteLogo = logoSetting?.value
+  let siteLogo = null;
+  try {
+    const logoSetting = await db.shopSettings.findUnique({ where: { key: "site_logo" } })
+    siteLogo = logoSetting?.value
+  } catch (error) {
+    console.error("Failed to load site logo:", error)
+  }
   return (
     <CartProvider>
       {/* Navigation / Top Header */}
