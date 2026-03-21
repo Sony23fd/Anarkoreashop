@@ -58,9 +58,15 @@ export async function getPendingOrders() {
 
 export async function confirmOrderPayment(orderId: string) {
   try {
+    const confirmedStatus = await db.orderStatusType.findFirst({ where: { name: "Баталгаажсан" } }) 
+      || await db.orderStatusType.findFirst({ where: { isDefault: false, isFinal: false } });
+
     await (db.order as any).update({
       where: { id: orderId },
-      data: { paymentStatus: "CONFIRMED" }
+      data: { 
+        paymentStatus: "CONFIRMED",
+        ...(confirmedStatus?.id && { statusId: confirmedStatus.id })
+      }
     })
     revalidatePath("/admin/orders/pending")
     revalidatePath("/admin/orders")
@@ -76,9 +82,14 @@ export async function rejectOrderPayment(orderId: string) {
       const order = await (tx.order as any).findUnique({ where: { id: orderId } })
       if (!order) return
 
+      const rejectedStatus = await tx.orderStatusType.findFirst({ where: { name: "Цуцлагдсан" } });
+
       await (tx.order as any).update({
         where: { id: orderId },
-        data: { paymentStatus: "REJECTED" }
+        data: { 
+          paymentStatus: "REJECTED",
+          ...(rejectedStatus?.id && { statusId: rejectedStatus.id })
+        }
       })
 
       await (tx.batch as any).update({
@@ -101,9 +112,15 @@ export async function confirmGroupPayment(orderIds: string[]) {
     const admin = await getCurrentAdmin()
     if (!admin) return { success: false, error: "Нэвтрэнэ үү" }
 
+    const confirmedStatus = await db.orderStatusType.findFirst({ where: { name: "Баталгаажсан" } }) 
+      || await db.orderStatusType.findFirst({ where: { isDefault: false, isFinal: false } });
+
     await (db.order as any).updateMany({
       where: { id: { in: orderIds } },
-      data: { paymentStatus: "CONFIRMED" }
+      data: { 
+        paymentStatus: "CONFIRMED",
+        ...(confirmedStatus?.id && { statusId: confirmedStatus.id })
+      }
     })
 
     await logActivity({

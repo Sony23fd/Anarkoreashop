@@ -16,21 +16,28 @@ export default async function AdminDashboardPage() {
   let batchSales: { name: string, sales: number }[] = [];
 
   try {
-    // 1. Total Revenue (All orders that are confirmed or higher)
+    const validOrderFilter = {
+      status: {
+        isDefault: false,
+        name: { not: "Цуцлагдсан" }
+      }
+    };
+
+    // 1. Total Revenue (All orders that are progressed beyond Pending and not Cancelled)
     const revenueResult = await db.order.aggregate({
-      where: { paymentStatus: "CONFIRMED" },
+      where: validOrderFilter,
       _sum: { totalAmount: true }
     })
     totalRevenue = Number(revenueResult._sum?.totalAmount || 0);
 
     // 2. Total Confirmed Orders
     successfulOrdersCount = await db.order.count({
-      where: { paymentStatus: "CONFIRMED" }
+      where: validOrderFilter
     })
 
     // 3. Completed Orders
     completedOrdersCount = await db.order.count({
-      where: { status: { isFinal: true } }
+      where: { status: { isFinal: true, name: { not: "Цуцлагдсан" } } }
     })
 
     // 4. Active Products
@@ -43,7 +50,7 @@ export default async function AdminDashboardPage() {
     const recentOrders = await db.order.findMany({
       where: { 
         createdAt: { gte: sevenDaysAgo },
-        paymentStatus: "CONFIRMED"
+        ...validOrderFilter
       },
       select: { createdAt: true, totalAmount: true }
     });
