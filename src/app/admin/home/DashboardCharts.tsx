@@ -1,7 +1,7 @@
 "use client"
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
+  BarChart, Bar, Cell
 } from "recharts"
 
 interface ChartData {
@@ -9,14 +9,27 @@ interface ChartData {
   topProducts: { name: string, sales: number }[];
 }
 
+const COLORS = [
+  '#4e3dc7', // Deep Indigo
+  '#3b82f6', // Blue
+  '#10b981', // Emerald
+  '#f59e0b', // Amber
+  '#ef4444', // Red
+  '#8b5cf6', // Violet
+  '#06b6d4', // Teal
+  '#ec4899', // Rose
+  '#f97316', // Orange
+  '#14b8a6', // Cyan
+];
+
 export function DashboardCharts({ revenueData, topProducts }: ChartData) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
         <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
           Сүүлийн 7 хоногийн орлого
         </h3>
-        <div className="h-[300px] w-full">
+        <div className="h-[350px] w-full flex-1">
           {revenueData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={revenueData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
@@ -27,9 +40,10 @@ export function DashboardCharts({ revenueData, topProducts }: ChartData) {
                   fontSize={12} 
                   tickLine={false} 
                   axisLine={false}
+                  width={60}
                   tickFormatter={(value) => `₮${(value / 1000).toFixed(0)}k`}
                 />
-                <Tooltip 
+                <RechartsTooltip 
                   formatter={(value: any) => [`₮${value.toLocaleString()}`, 'Орлого']}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
@@ -49,22 +63,26 @@ export function DashboardCharts({ revenueData, topProducts }: ChartData) {
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
         <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-          Топ 5 борлуулалттай банкууд / бараа
+          Топ 10 борлуулалттай багцууд / бараа
         </h3>
-        <div className="h-[300px] w-full">
+        <div className="h-[350px] w-full flex-1">
           {topProducts.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topProducts} margin={{ top: 5, right: 20, bottom: 5, left: 0 }} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
                 <XAxis type="number" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis dataKey="name" type="category" width={100} stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip 
+                <YAxis dataKey="name" type="category" width={110} stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                <RechartsTooltip 
                   formatter={(value: any) => [`${value} ш`, 'Борлуулалт']}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
-                <Bar dataKey="sales" fill="#818cf8" radius={[0, 4, 4, 0]} barSize={24} />
+                <Bar dataKey="sales" radius={[0, 4, 4, 0]} barSize={20}>
+                  {topProducts.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           ) : (

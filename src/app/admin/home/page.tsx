@@ -18,14 +18,14 @@ export default async function AdminDashboardPage() {
   try {
     // 1. Total Revenue (All orders that are confirmed or higher)
     const revenueResult = await db.order.aggregate({
-      where: { status: { name: { notIn: ["PENDING", "REJECTED"] } } },
+      where: { paymentStatus: "CONFIRMED" },
       _sum: { totalAmount: true }
     })
     totalRevenue = Number(revenueResult._sum?.totalAmount || 0);
 
     // 2. Total Confirmed Orders
     successfulOrdersCount = await db.order.count({
-      where: { status: { name: { notIn: ["PENDING", "REJECTED"] } } }
+      where: { paymentStatus: "CONFIRMED" }
     })
 
     // 3. Completed Orders
@@ -43,7 +43,7 @@ export default async function AdminDashboardPage() {
     const recentOrders = await db.order.findMany({
       where: { 
         createdAt: { gte: sevenDaysAgo },
-        status: { name: { notIn: ["PENDING", "REJECTED"] } }
+        paymentStatus: "CONFIRMED"
       },
       select: { createdAt: true, totalAmount: true }
     });
@@ -68,7 +68,7 @@ export default async function AdminDashboardPage() {
       amount: revenueByDate[date]
     }));
 
-    // Chart 2: Top 5 performing batches
+    // Chart 2: Top 10 performing batches
     const batches = await db.batch.findMany({
       include: { product: true },
     });
@@ -78,7 +78,7 @@ export default async function AdminDashboardPage() {
         name: b.product?.name?.substring(0, 15) + "..." || "Бараа",
         sales: sold > 0 ? sold : 0
       };
-    }).filter(b => b.sales > 0).sort((a, b) => b.sales - a.sales).slice(0, 5);
+    }).filter(b => b.sales > 0).sort((a, b) => b.sales - a.sales).slice(0, 10);
   } catch (error) {
     console.error("Dashboard data fetch error:", error);
   }
