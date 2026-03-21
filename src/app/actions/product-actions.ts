@@ -30,7 +30,13 @@ export async function getProducts() {
 export async function getActiveProducts() {
   try {
     const batches = await db.batch.findMany({
-      where: { isAvailableForSale: true } as any,
+      where: { 
+        isAvailableForSale: true,
+        category: {
+          isArchived: false,
+          name: { not: { contains: "Сарын захиалга" } }
+        }
+      },
       include: { product: true, category: true },
       orderBy: { createdAt: "desc" },
     })

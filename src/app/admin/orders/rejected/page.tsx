@@ -5,8 +5,9 @@ import { ArchiveX, Package, Truck, User } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
-export default async function RejectedOrdersPage({ searchParams }: { searchParams: { days?: string } }) {
-  const days = searchParams.days ? parseInt(searchParams.days, 10) : 30;
+export default async function RejectedOrdersPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
+  const p = await searchParams;
+  const days = p.days ? parseInt(p.days, 10) : 30;
   const { orders } = await getRejectedOrders(days)
 
   // Group by transactionRef (same cart = same ref) then by customerPhone
