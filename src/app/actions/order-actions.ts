@@ -32,7 +32,8 @@ export async function getOrders() {
 export async function getCompletedOrders(days: number = 30) {
   try {
     const whereClause: any = {
-      status: { isFinal: true }
+      status: { isFinal: true },
+      paymentStatus: { not: "REJECTED" }
     };
 
     if (days > 0) {
@@ -55,6 +56,35 @@ export async function getCompletedOrders(days: number = 30) {
   } catch (error) {
     console.error("Failed to fetch completed orders:", error)
     return { success: false, error: "Failed to fetch completed orders" }
+  }
+}
+
+export async function getRejectedOrders(days: number = 30) {
+  try {
+    const whereClause: any = {
+      paymentStatus: "REJECTED"
+    };
+
+    if (days > 0) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      whereClause.updatedAt = { gte: cutoffDate };
+    }
+
+    const orders = await db.order.findMany({
+      where: whereClause,
+      include: {
+        batch: {
+          include: { product: true, category: true }
+        },
+        status: true
+      },
+      orderBy: { updatedAt: "desc" },
+    })
+    return { success: true, orders: JSON.parse(JSON.stringify(orders)) }
+  } catch (error) {
+    console.error("Failed to fetch rejected orders:", error)
+    return { success: false, error: "Failed to fetch rejected orders" }
   }
 }
 
@@ -396,9 +426,65 @@ export async function requestDelivery(orderId: string, deliveryAddress: string) 
   }
 }
 
-/**
- * Restore a completed order back to its default active status
- */
+export async function restoreGroupOrder(orderIds: string[]) {
+  try {
+    const adminMode = await getCurrentAdmin()
+    if (!adminMode) return { success: false, error: "Хандах эрхгүй" }
+
+    const activeStatus = await db.orderStatusType.findFirst({
+      where: { isDefault: true }
+    })
+
+    if (!activeStatus) {
+      return { success: false, error: "Үндсэн идэвхтэй төлөв олдсонгүй" }
+    }
+
+    await db.$transaction(async (tx) => {
+      const orders = await (tx.order as any).findMany({
+        where: { id: { in: orderIds } }
+      });
+
+      for (const order of orders) {
+        const updateData: any = { statusId: activeStatus.id };
+
+        if (order.paymentStatus === 'REJECTED') {
+          updateData.paymentStatus = 'PENDING';
+          await (tx.batch as any).update({
+            where: { id: order.batchId },
+            data: { remainingQuantity: { decrement: order.quantity } }
+          });
+        }
+
+        await (tx.order as any).update({
+          where: { id: order.id },
+          data: updateData
+        });
+      }
+    });
+
+    await logActivity({
+      userId: adminMode.id,
+      userName: adminMode.name || "Сэргээгч Админ",
+      userRole: adminMode.role,
+      action: "Бөөнөөр сэргээлээ",
+      target: "Захиалгууд",
+      detail: `${orderIds.length} ширхэг хуучин захиалгыг буцааж идэвхтэй төлөвт шилжүүллээ`,
+    })
+
+    revalidatePath("/admin/orders/rejected")
+    revalidatePath("/admin/orders/completed")
+    revalidatePath("/admin/orders/pending")
+    revalidatePath("/admin/orders")
+    revalidatePath("/admin/products")
+    revalidatePath("/")
+    
+    return { success: true }
+  } catch(err: any) {
+    console.error("restoreGroupOrder error:", err)
+    return { success: false, error: err.message }
+  }
+}
+
 export async function restoreCompletedOrder(orderId: string) {
   try {
     const adminMode = await getCurrentAdmin()
@@ -412,10 +498,27 @@ export async function restoreCompletedOrder(orderId: string) {
       return { success: false, error: "Үндсэн идэвхтэй төлөв олдсонгүй" }
     }
 
-    await db.order.update({
-      where: { id: orderId },
-      data: { statusId: activeStatus.id }
-    })
+    await db.$transaction(async (tx) => {
+      const order = await (tx.order as any).findUnique({ where: { id: orderId } });
+      if (!order) throw new Error("Захиалга олдсонгүй");
+
+      const updateData: any = { statusId: activeStatus.id };
+
+      // If it was cancelled/rejected, we need to revert the paymentStatus and reserve quantity again
+      if (order.paymentStatus === 'REJECTED') {
+        updateData.paymentStatus = 'PENDING';
+        
+        await (tx.batch as any).update({
+          where: { id: order.batchId },
+          data: { remainingQuantity: { decrement: order.quantity } }
+        });
+      }
+
+      await (tx.order as any).update({
+        where: { id: orderId },
+        data: updateData
+      });
+    });
 
     // Log the action
     await logActivity({
@@ -429,7 +532,11 @@ export async function restoreCompletedOrder(orderId: string) {
     })
 
     revalidatePath("/admin/orders/completed")
+    revalidatePath("/admin/orders/pending")
     revalidatePath("/admin/orders")
+    revalidatePath("/admin/products")
+    revalidatePath("/")
+    
     return { success: true }
   } catch(err: any) {
     console.error("restoreCompletedOrder error:", err)

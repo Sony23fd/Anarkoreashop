@@ -29,7 +29,7 @@ export function DashboardCharts({ revenueData, topProducts }: ChartData) {
         <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
           Сүүлийн 7 хоногийн орлого
         </h3>
-        <div className="h-[350px] w-full flex-1">
+        <div style={{ height: "350px", minHeight: "350px" }} className="w-full flex-1 mt-4">
           {revenueData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={revenueData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
@@ -67,7 +67,7 @@ export function DashboardCharts({ revenueData, topProducts }: ChartData) {
         <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
           Топ 10 борлуулалттай багцууд / бараа
         </h3>
-        <div className="h-[350px] w-full flex-1">
+        <div style={{ height: "350px", minHeight: "350px" }} className="w-full flex-1 mt-4">
           {topProducts.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topProducts} margin={{ top: 5, right: 20, bottom: 5, left: 0 }} layout="vertical">
