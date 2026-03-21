@@ -3,20 +3,38 @@ import { MapPin, Clock, Truck, ShieldCheck, Mail, Phone, Instagram, Facebook } f
 import { CartProvider } from "@/context/CartContext"
 import { CartIcon } from "@/components/storefront/CartIcon"
 import Link from "next/link"
+import Image from "next/image"
+import { db } from "@/lib/db"
 
-export default function StorefrontLayout({ children }: { children: ReactNode }) {
+export default async function StorefrontLayout({ children }: { children: ReactNode }) {
+  const logoSetting = await db.shopSettings.findUnique({ where: { key: "site_logo" } })
+  const siteLogo = logoSetting?.value
   return (
     <CartProvider>
       {/* Navigation / Top Header */}
       <header className="bg-white sticky top-0 z-40 border-b border-slate-100/80 shadow-sm/50 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4e3dc7] to-indigo-400 flex items-center justify-center text-white font-bold text-lg shadow-md">
-              A
-            </div>
-            <span className="font-extrabold text-2xl tracking-tight text-slate-800">
-              Anar<span className="text-[#4e3dc7]">Korea</span>
-            </span>
+            {siteLogo ? (
+              <div className="relative h-10 w-auto min-w-[120px] flex items-center">
+                <Image 
+                  src={siteLogo} 
+                  alt="AnarKorea Logo" 
+                  width={150} 
+                  height={40} 
+                  className="object-contain max-h-12 w-auto"
+                />
+              </div>
+            ) : (
+              <>
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4e3dc7] to-indigo-400 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                  A
+                </div>
+                <span className="font-extrabold text-2xl tracking-tight text-slate-800">
+                  Anar<span className="text-[#4e3dc7]">Korea</span>
+                </span>
+              </>
+            )}
           </Link>
           
           <div className="flex items-center gap-4 w-full md:w-auto mt-2 md:mt-0">
@@ -53,10 +71,24 @@ export default function StorefrontLayout({ children }: { children: ReactNode }) 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-16">
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-6">
-                <div className="w-6 h-6 rounded-md bg-[#4e3dc7] flex items-center justify-center text-white font-bold text-xs">
-                  A
-                </div>
-                <span className="font-bold text-xl text-white tracking-tight">AnarKorea</span>
+                {siteLogo ? (
+                  <div className="relative h-8 w-auto min-w-[100px] flex items-center opacity-90 group-hover:opacity-100 transition-opacity brightness-0 invert">
+                    <Image 
+                      src={siteLogo} 
+                      alt="AnarKorea Logo" 
+                      width={120} 
+                      height={32} 
+                      className="object-contain max-h-8 w-auto"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-6 h-6 rounded-md bg-[#4e3dc7] flex items-center justify-center text-white font-bold text-xs">
+                      A
+                    </div>
+                    <span className="font-bold text-xl text-white tracking-tight">AnarKorea</span>
+                  </>
+                )}
               </div>
               <p className="text-sm leading-relaxed text-slate-400">
                 Солонгос улсаас чанарын баталгаат бараа бүтээгдэхүүнийг хамгийн хурднаар, найдвартай захиалж аваарай.

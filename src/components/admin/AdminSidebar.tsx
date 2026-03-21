@@ -47,6 +47,8 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "СИСТЕМ & ТӨЛӨВ",
     items: [
       { name: "Захиалгын статус", url: "/admin/order-status", icon: Activity, roles: ["ADMIN"] },
+      { name: "Хэрэглэгчид", url: "/admin/users", icon: Users, roles: ["ADMIN"] },
+      { name: "Ерөнхий тохиргоо", url: "/admin/settings/general", icon: Settings, roles: ["ADMIN"] },
       { name: "Төлбөрийн тохиргоо", url: "/admin/settings/payment", icon: CreditCard, roles: ["ADMIN"] },
       { name: "Нөхцөлийн тохиргоо", url: "/admin/settings/terms", icon: FileText, roles: ["ADMIN"] },
       { name: "Үйлдлийн лог", url: "/admin/activity", icon: FileText, roles: ["ADMIN"] },

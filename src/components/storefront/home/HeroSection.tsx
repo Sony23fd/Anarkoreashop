@@ -1,11 +1,10 @@
 import Link from "next/link";
+import { AnimatedHeroBackground } from "./AnimatedHeroBackground";
 
 export function HeroSection() {
   return (
     <div className="relative overflow-hidden bg-[#1c1642] min-h-[550px] flex items-center justify-center">
-      {/* Abstract Background Gradients */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-[#4e3dc7]/40 blur-[100px] pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-indigo-500/20 blur-[100px] pointer-events-none"></div>
+      <AnimatedHeroBackground />
       
       <div className="relative z-10 max-w-6xl mx-auto px-4 py-20 text-center flex flex-col items-center">
         {/* Glassmorphism Card Wrapper */}
