@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react"
 
-export function AnimatedHeroBackground() {
+interface Props {
+  bgColor?: string
+}
+
+export function AnimatedHeroBackground({ bgColor = "#5442cc" }: Props) {
   const [mounted, setMounted] = useState(false)
   
   useEffect(() => {
@@ -11,9 +15,9 @@ export function AnimatedHeroBackground() {
 
   if (!mounted) {
     return (
-      <div className="absolute inset-0 bg-[#1c1642] overflow-hidden z-0">
-         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-[#4e3dc7]/40 blur-[100px]" />
-         <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-indigo-500/20 blur-[100px]" />
+      <div className="absolute inset-0 overflow-hidden z-0" style={{ backgroundColor: bgColor }}>
+         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-white/10 blur-[100px]" />
+         <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-white/10 blur-[100px]" />
       </div>
     )
   }
@@ -38,12 +42,12 @@ export function AnimatedHeroBackground() {
   }))
 
   return (
-    <div className="absolute inset-0 bg-[#1c1642] overflow-hidden z-0">
+    <div className="absolute inset-0 overflow-hidden z-0" style={{ backgroundColor: bgColor }}>
       
       {/* Ambient gradient blobs */}
-      <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-[#4e3dc7]/30 blur-[120px] mix-blend-screen animate-blob" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-indigo-500/20 blur-[100px] mix-blend-screen animate-blob animation-delay-2000" />
-      <div className="absolute top-[20%] left-[60%] w-[50%] h-[50%] rounded-full bg-purple-500/20 blur-[100px] mix-blend-screen animate-blob animation-delay-4000" />
+      <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-white/10 blur-[120px] mix-blend-overlay animate-blob" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-indigo-300/20 blur-[100px] mix-blend-overlay animate-blob animation-delay-2000" />
+      <div className="absolute top-[20%] left-[60%] w-[50%] h-[50%] rounded-full bg-pink-300/10 blur-[100px] mix-blend-overlay animate-blob animation-delay-4000" />
 
       {/* Static twinkling stars */}
       {stars.map((star) => (
@@ -90,10 +94,10 @@ export function AnimatedHeroBackground() {
           100% { transform: translate(0px, 0px) scale(1); }
         }
         @keyframes shooting-star {
-          0% { transform: translateX(0) translateY(0) rotate(-45deg); opacity: 0; }
-          10% { opacity: 1; }
-          20% { transform: translateX(-200px) translateY(200px) rotate(-45deg); opacity: 0; }
-          100% { transform: translateX(-200px) translateY(200px) rotate(-45deg); opacity: 0; }
+          0% { transform: translateX(0) translateY(0) rotate(50deg); opacity: 0; }
+          5% { opacity: 1; }
+          15% { transform: translateX(300px) translateY(350px) rotate(50deg); opacity: 0; }
+          100% { transform: translateX(300px) translateY(350px) rotate(50deg); opacity: 0; }
         }
         .animation-delay-2000 { animation-delay: 2s; }
         .animation-delay-4000 { animation-delay: 4s; }
