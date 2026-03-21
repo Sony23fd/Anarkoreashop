@@ -1,0 +1,67 @@
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import { getIronSession } from "iron-session"
+import type { AdminSessionData } from "@/lib/session"
+
+// CARGO_ADMIN allowed route prefixes (must match auth.ts)
+const CARGO_ADMIN_ALLOWED_ROUTES = [
+  "/admin/home",
+  "/admin/orders",
+]
+
+// We can't import from src/lib directly in middleware (edge runtime), so inline constants
+const SESSION_OPTIONS = {
+  password: process.env.SESSION_SECRET || "anar-shop-secret-key-must-be-at-least-32-chars!!",
+  cookieName: "anar-admin-session",
+  cookieOptions: {
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: true,
+    maxAge: 60 * 60 * 8, // 8 hours
+  },
+}
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Skip login page and API routes
+  if (
+    pathname === "/admin/login" ||
+    pathname.startsWith("/api/admin/login") ||
+    pathname.startsWith("/api/admin/logout") ||
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api/qpay") ||
+    pathname.startsWith("/api/notifications") ||
+    pathname.startsWith("/api/upload")
+  ) {
+    return NextResponse.next()
+  }
+
+  // Only protect /admin routes
+  if (!pathname.startsWith("/admin")) {
+    return NextResponse.next()
+  }
+
+  // Check session
+  const response = NextResponse.next()
+  const session = await getIronSession<AdminSessionData>(request, response, SESSION_OPTIONS)
+
+  if (!session.isLoggedIn || !session.userId) {
+    const loginUrl = new URL("/admin/login", request.url)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  // Check role-based access for CARGO_ADMIN
+  if (session.role === "CARGO_ADMIN") {
+    const isAllowed = CARGO_ADMIN_ALLOWED_ROUTES.some(r => pathname.startsWith(r))
+    if (!isAllowed) {
+      const fallback = new URL("/admin/orders/search", request.url)
+      return NextResponse.redirect(fallback)
+    }
+  }
+
+  return response
+}
+
+export const config = {
+  matcher: ["/admin/:path*"],
+}

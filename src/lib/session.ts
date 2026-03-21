@@ -1,0 +1,41 @@
+import { getIronSession, IronSession } from "iron-session"
+import { cookies } from "next/headers"
+
+export interface AdminSessionData {
+  userId: string
+  email: string
+  name: string
+  role: "ADMIN" | "CARGO_ADMIN"
+  isLoggedIn: boolean
+}
+
+const SESSION_OPTIONS = {
+  password: process.env.SESSION_SECRET || "anar-shop-secret-key-must-be-at-least-32-chars!!",
+  cookieName: "anar-admin-session",
+  cookieOptions: {
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: true,
+    maxAge: 60 * 60 * 8, // 8 hours
+  },
+}
+
+export async function getSession(): Promise<IronSession<AdminSessionData>> {
+  const cookieStore = await cookies()
+  const session = await getIronSession<AdminSessionData>(cookieStore, SESSION_OPTIONS)
+  return session
+}
+
+export async function createSession(data: Omit<AdminSessionData, "isLoggedIn">) {
+  const session = await getSession()
+  session.userId = data.userId
+  session.email = data.email
+  session.name = data.name
+  session.role = data.role
+  session.isLoggedIn = true
+  await session.save()
+}
+
+export async function destroySession() {
+  const session = await getSession()
+  session.destroy()
+}

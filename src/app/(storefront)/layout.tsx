@@ -1,0 +1,129 @@
+import { ReactNode } from "react"
+import { MapPin, Clock, Truck, ShieldCheck, Mail, Phone, Instagram, Facebook } from "lucide-react"
+import { CartProvider } from "@/context/CartContext"
+import { CartIcon } from "@/components/storefront/CartIcon"
+import Link from "next/link"
+
+export default function StorefrontLayout({ children }: { children: ReactNode }) {
+  return (
+    <CartProvider>
+      {/* Navigation / Top Header */}
+      <header className="bg-white sticky top-0 z-40 border-b border-slate-100/80 shadow-sm/50 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4e3dc7] to-indigo-400 flex items-center justify-center text-white font-bold text-lg shadow-md">
+              A
+            </div>
+            <span className="font-extrabold text-2xl tracking-tight text-slate-800">
+              Anar<span className="text-[#4e3dc7]">Korea</span>
+            </span>
+          </Link>
+          
+          <div className="flex items-center gap-4 w-full md:w-auto mt-2 md:mt-0">
+            <form action="/track" className="flex relative group w-full md:w-auto shadow-sm hover:shadow-md transition-shadow rounded-full">
+              <input
+                type="text"
+                name="account"
+                required
+                placeholder="Захиалгаа шалгах (данс: 500..)"
+                className="w-full md:w-80 lg:w-96 bg-slate-50 border border-slate-200 text-base px-6 py-3 rounded-full focus:outline-none focus:border-[#4e3dc7] focus:ring-1 focus:ring-[#4e3dc7] transition-all placeholder:text-slate-400 font-medium"
+              />
+              <button type="submit" className="absolute right-1.5 top-1.5 bottom-1.5 bg-[#4e3dc7] text-white px-6 rounded-full text-sm font-bold hover:bg-indigo-700 transition-colors shadow-sm">
+                Шалгах
+              </button>
+            </form>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="flex-1 min-h-[60vh] pb-10">
+        {children}
+      </main>
+
+      {/* Global FAB Cart Icon */}
+      <CartIcon />
+
+      {/* Modern Premium Footer */}
+      <footer className="bg-[#1c1642] text-slate-300 pt-16 pb-8 px-4 md:px-8 lg:px-16 mt-auto">
+        <div className="max-w-6xl mx-auto">
+          {/* Top border decor */}
+          <div className="h-1 w-20 bg-gradient-to-r from-[#4e3dc7] to-indigo-400 rounded-full mb-12"></div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-16">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-6 h-6 rounded-md bg-[#4e3dc7] flex items-center justify-center text-white font-bold text-xs">
+                  A
+                </div>
+                <span className="font-bold text-xl text-white tracking-tight">AnarKorea</span>
+              </div>
+              <p className="text-sm leading-relaxed text-slate-400">
+                Солонгос улсаас чанарын баталгаат бараа бүтээгдэхүүнийг хамгийн хурднаар, найдвартай захиалж аваарай.
+              </p>
+              <div className="flex gap-4 pt-2">
+                <a href="#" className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#4e3dc7] hover:text-white transition-colors">
+                  <Instagram className="w-4 h-4" />
+                </a>
+                <a href="#" className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#4e3dc7] hover:text-white transition-colors">
+                  <Facebook className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-6">Холбоо барих</h3>
+              <div className="flex items-start gap-3 text-sm">
+                <MapPin className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+                <p className="leading-relaxed">БЗД, 26-р хороо Саруул хороолол<br/>122-р байр 3 давхарт</p>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <Phone className="w-5 h-5 text-indigo-400 shrink-0" />
+                <p>+976 8853 9887</p>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <Mail className="w-5 h-5 text-indigo-400 shrink-0" />
+                <p>info@anarkorea.mn</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-6">Цагийн хуваарь</h3>
+              <ul className="text-sm space-y-3">
+                <li className="flex justify-between items-center pb-2 border-b border-white/5">
+                  <span className="text-slate-400">Мягмар - Бямба</span>
+                  <span className="text-indigo-400 font-medium">11:00 - 19:00</span>
+                </li>
+                <li className="flex justify-between items-center pb-2 border-b border-white/5">
+                  <span className="text-slate-400">Даваа & Ням</span>
+                  <span className="text-rose-400 font-medium tracking-wide">Амарна</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-6">Баталгаа</h3>
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="w-8 h-8 text-green-400 shrink-0" />
+                <div>
+                  <h4 className="text-slate-200 font-medium text-sm mb-1">Найдвартай хүргэлт</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Захиалгын төлбөр баталгаажсанаас хойш шууд ачигдах бөгөөд албан ёсны каргогоор танд хүрнэ.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+            <p>© {new Date().getFullYear()} <strong className="text-white font-medium">Anar Korea Shop</strong>. Бүх эрх хуулиар хамгаалагдсан.</p>
+            <div className="flex gap-6">
+              <a href="#" className="hover:text-white transition-colors">Үйлчилгээний нөхцөл</a>
+              <a href="#" className="hover:text-white transition-colors">Нууцлалын бодлого</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </CartProvider>
+  )
+}
