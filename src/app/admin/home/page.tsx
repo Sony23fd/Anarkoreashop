@@ -3,72 +3,85 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Package, Users, ShoppingCart, DollarSign, CheckCircle } from "lucide-react"
 import { DashboardCharts } from "./DashboardCharts"
 
+export const dynamic = "force-dynamic"
+
 export default async function AdminDashboardPage() {
   const now = new Date();
   
-  // 1. Total Revenue (All orders that are confirmed or higher)
-  const revenueResult = await db.order.aggregate({
-    where: { status: { name: { notIn: ["PENDING", "REJECTED"] } } },
-    _sum: { totalAmount: true }
-  })
-  const totalRevenue = Number(revenueResult._sum?.totalAmount || 0);
+  let totalRevenue = 0;
+  let successfulOrdersCount = 0;
+  let completedOrdersCount = 0;
+  let activeProductsCount = 0;
+  let revenueData: { date: string, amount: number }[] = [];
+  let batchSales: { name: string, sales: number }[] = [];
 
-  // 2. Total Confirmed Orders
-  const successfulOrdersCount = await db.order.count({
-    where: { status: { name: { notIn: ["PENDING", "REJECTED"] } } }
-  })
+  try {
+    // 1. Total Revenue (All orders that are confirmed or higher)
+    const revenueResult = await db.order.aggregate({
+      where: { status: { name: { notIn: ["PENDING", "REJECTED"] } } },
+      _sum: { totalAmount: true }
+    })
+    totalRevenue = Number(revenueResult._sum?.totalAmount || 0);
 
-  // 3. Completed Orders
-  const completedOrdersCount = await db.order.count({
-    where: { status: { isFinal: true } }
-  })
+    // 2. Total Confirmed Orders
+    successfulOrdersCount = await db.order.count({
+      where: { status: { name: { notIn: ["PENDING", "REJECTED"] } } }
+    })
 
-  // 4. Active Products
-  const activeProductsCount = await db.product.count({
-    where: { isActive: true }
-  })
+    // 3. Completed Orders
+    completedOrdersCount = await db.order.count({
+      where: { status: { isFinal: true } }
+    })
 
-  // Chart 1: Revenue last 7 days
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const recentOrders = await db.order.findMany({
-    where: { 
-      createdAt: { gte: sevenDaysAgo },
-      status: { name: { notIn: ["PENDING", "REJECTED"] } }
-    },
-    select: { createdAt: true, totalAmount: true }
-  });
+    // 4. Active Products
+    activeProductsCount = await db.product.count({
+      where: { isActive: true }
+    })
 
-  // Group by date
-  const revenueByDate: Record<string, number> = {};
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-    const dateStr = d.toISOString().split('T')[0];
-    revenueByDate[dateStr] = 0;
-  }
-  
-  recentOrders.forEach(order => {
-    const dateStr = order.createdAt.toISOString().split('T')[0];
-    if (revenueByDate[dateStr] !== undefined) {
-      revenueByDate[dateStr] += Number(order.totalAmount || 0);
+    // Chart 1: Revenue last 7 days
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const recentOrders = await db.order.findMany({
+      where: { 
+        createdAt: { gte: sevenDaysAgo },
+        status: { name: { notIn: ["PENDING", "REJECTED"] } }
+      },
+      select: { createdAt: true, totalAmount: true }
+    });
+
+    // Group by date
+    const revenueByDate: Record<string, number> = {};
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const dateStr = d.toISOString().split('T')[0];
+      revenueByDate[dateStr] = 0;
     }
-  });
+    
+    recentOrders.forEach(order => {
+      const dateStr = order.createdAt.toISOString().split('T')[0];
+      if (revenueByDate[dateStr] !== undefined) {
+        revenueByDate[dateStr] += Number(order.totalAmount || 0);
+      }
+    });
 
-  const revenueData = Object.keys(revenueByDate).map(date => ({
-    date: date.substring(5), // MM-DD
-    amount: revenueByDate[date]
-  }));
+    revenueData = Object.keys(revenueByDate).map(date => ({
+      date: date.substring(5), // MM-DD
+      amount: revenueByDate[date]
+    }));
 
-  // Chart 2: Top 5 performing batches
-  const batches = await db.batch.findMany({
-    include: { product: true },
-  });
-  const batchSales = batches.map(b => {
-    const sold = b.targetQuantity - b.remainingQuantity;
-    return {
-      name: b.product?.name?.substring(0, 15) + "..." || "Бараа",
-      sales: sold > 0 ? sold : 0
-    };
-  }).filter(b => b.sales > 0).sort((a, b) => b.sales - a.sales).slice(0, 5);
+    // Chart 2: Top 5 performing batches
+    const batches = await db.batch.findMany({
+      include: { product: true },
+    });
+    batchSales = batches.map(b => {
+      const sold = b.targetQuantity - b.remainingQuantity;
+      return {
+        name: b.product?.name?.substring(0, 15) + "..." || "Бараа",
+        sales: sold > 0 ? sold : 0
+      };
+    }).filter(b => b.sales > 0).sort((a, b) => b.sales - a.sales).slice(0, 5);
+  } catch (error) {
+    console.error("Dashboard data fetch error:", error);
+  }
 
   return (
     <div className="space-y-6">
