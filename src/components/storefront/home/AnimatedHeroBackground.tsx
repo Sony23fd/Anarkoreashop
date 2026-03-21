@@ -11,7 +11,7 @@ export function AnimatedHeroBackground() {
 
   if (!mounted) {
     return (
-      <div className="absolute inset-0 bg-[#1c1642] overflow-hidden -z-20">
+      <div className="absolute inset-0 bg-[#1c1642] overflow-hidden z-0">
          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-[#4e3dc7]/40 blur-[100px]" />
          <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-indigo-500/20 blur-[100px]" />
       </div>
@@ -38,7 +38,7 @@ export function AnimatedHeroBackground() {
   }))
 
   return (
-    <div className="absolute inset-0 bg-[#1c1642] overflow-hidden -z-20">
+    <div className="absolute inset-0 bg-[#1c1642] overflow-hidden z-0">
       
       {/* Ambient gradient blobs */}
       <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-[#4e3dc7]/30 blur-[120px] mix-blend-screen animate-blob" />

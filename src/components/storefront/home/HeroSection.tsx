@@ -3,7 +3,7 @@ import { AnimatedHeroBackground } from "./AnimatedHeroBackground";
 
 export function HeroSection() {
   return (
-    <div className="relative overflow-hidden bg-[#1c1642] min-h-[550px] flex items-center justify-center">
+    <div className="relative overflow-hidden min-h-[550px] flex items-center justify-center">
       <AnimatedHeroBackground />
       
       <div className="relative z-10 max-w-6xl mx-auto px-4 py-20 text-center flex flex-col items-center">
