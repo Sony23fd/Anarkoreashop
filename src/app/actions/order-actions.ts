@@ -29,10 +29,10 @@ export async function getOrders() {
   }
 }
 
-export async function getCompletedOrders(days: number = 30) {
+export async function getPickedUpOrders(days: number = 30) {
   try {
     const whereClause: any = {
-      status: { isFinal: true },
+      status: { isFinal: true, name: "Өөрөө ирж авсан" },
       paymentStatus: { not: "REJECTED" }
     };
 
@@ -54,8 +54,38 @@ export async function getCompletedOrders(days: number = 30) {
     })
     return { success: true, orders: JSON.parse(JSON.stringify(orders)) }
   } catch (error) {
-    console.error("Failed to fetch completed orders:", error)
-    return { success: false, error: "Failed to fetch completed orders" }
+    console.error("Failed to fetch picked up orders:", error)
+    return { success: false, error: "Failed to fetch picked up orders" }
+  }
+}
+
+export async function getDeliveredOrders(days: number = 30) {
+  try {
+    const whereClause: any = {
+      status: { isFinal: true, name: "Хүргэлтээр авсан" },
+      paymentStatus: { not: "REJECTED" }
+    };
+
+    if (days > 0) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      whereClause.updatedAt = { gte: cutoffDate };
+    }
+
+    const orders = await db.order.findMany({
+      where: whereClause,
+      include: {
+        batch: {
+          include: { product: true, category: true }
+        },
+        status: true
+      },
+      orderBy: { updatedAt: "desc" },
+    })
+    return { success: true, orders: JSON.parse(JSON.stringify(orders)) }
+  } catch (error) {
+    console.error("Failed to fetch delivered orders:", error)
+    return { success: false, error: "Failed to fetch delivered orders" }
   }
 }
 
