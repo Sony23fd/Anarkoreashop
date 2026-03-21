@@ -166,10 +166,10 @@ export default function SearchClient({ statuses }: { statuses: any[] }) {
                       <Select 
                         value={order.statusId ? String(order.statusId) : undefined} 
                         onValueChange={(val) => {
-                          if (val !== order.statusId) {
+                          if (val && val !== order.statusId) {
                             setConfirmChange({
                               orderId: order.id,
-                              newStatusId: val,
+                              newStatusId: val as string,
                               oldStatusId: order.statusId || null
                             });
                           }
