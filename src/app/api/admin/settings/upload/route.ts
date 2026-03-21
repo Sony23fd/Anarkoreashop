@@ -22,26 +22,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Only image files are allowed" }, { status: 400 })
     }
 
-    const maxSize = 5 * 1024 * 1024 // 5MB limit
+    const maxSize = 2 * 1024 * 1024 // 2MB limit
     if (file.size > maxSize) {
-      return NextResponse.json({ error: "File too large (max 5MB)" }, { status: 400 })
+      return NextResponse.json({ error: "Зургийн хэмжээ 2MB-аас хэтрэхгүй байх ёстой" }, { status: 400 })
     }
 
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    const uploadsDir = join(process.cwd(), "public", "uploads", "settings")
-    await mkdir(uploadsDir, { recursive: true })
+    // Convert to base64 to store directly in DB without needing file system access on Vercel
+    const base64String = `data:${file.type};base64,${buffer.toString("base64")}`
 
-    const ext = file.name.split(".").pop() ?? "png"
-    const filename = `logo-${Date.now()}.${ext}`
-    const filepath = join(uploadsDir, filename)
-
-    await writeFile(filepath, buffer)
-
-    const fileUrl = `/uploads/settings/${filename}`
-
-    return NextResponse.json({ success: true, url: fileUrl })
+    return NextResponse.json({ success: true, url: base64String })
   } catch (e) {
     console.error("Settings upload error:", e)
     return NextResponse.json({ error: "Upload failed" }, { status: 500 })
