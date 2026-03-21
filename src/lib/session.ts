@@ -19,14 +19,18 @@ const SESSION_OPTIONS = {
   },
 }
 
-export async function getSession(): Promise<IronSession<AdminSessionData>> {
+export async function getSession(rememberMe: boolean = false): Promise<IronSession<AdminSessionData>> {
   const cookieStore = await cookies()
-  const session = await getIronSession<AdminSessionData>(cookieStore, SESSION_OPTIONS)
+  const options = { ...SESSION_OPTIONS }
+  if (rememberMe) {
+    options.cookieOptions = { ...options.cookieOptions, maxAge: 60 * 60 * 24 * 30 } // 30 days
+  }
+  const session = await getIronSession<AdminSessionData>(cookieStore, options)
   return session
 }
 
-export async function createSession(data: Omit<AdminSessionData, "isLoggedIn">) {
-  const session = await getSession()
+export async function createSession(data: Omit<AdminSessionData, "isLoggedIn">, rememberMe: boolean = false) {
+  const session = await getSession(rememberMe)
   session.userId = data.userId
   session.email = data.email
   session.name = data.name
