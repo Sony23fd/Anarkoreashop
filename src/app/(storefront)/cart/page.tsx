@@ -9,6 +9,7 @@ export default async function CartPage() {
     <CartClient
       termsOfService={settings.terms_of_service}
       deliveryTerms={settings.delivery_terms}
+      qpayEnabled={settings.qpay_enabled === "true"}
     />
   )
 }

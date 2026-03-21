@@ -8,7 +8,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 
-export function CartClient({ termsOfService, deliveryTerms }: { termsOfService?: string; deliveryTerms?: string }) {
+export function CartClient({ termsOfService, deliveryTerms, qpayEnabled }: { termsOfService?: string; deliveryTerms?: string; qpayEnabled?: boolean }) {
   const { items, removeItem, updateQty, clearCart, totalPrice } = useCart()
   const router = useRouter()
   const { toast } = useToast()
@@ -99,8 +99,12 @@ export function CartClient({ termsOfService, deliveryTerms }: { termsOfService?:
       toast({ title: "Амжилттай", description: "Захиалгууд үүсгэгдлээ." })
       setIsRedirecting(true)
       clearCart()
-      // Redirect to payment page using shared transactionRef (shows ALL items)
-      router.push(`/order-pending/ref/${sharedRef}`)
+      // Redirect to specific page based on QPay availability
+      if (qpayEnabled) {
+        router.push(`/order-pending/ref/${sharedRef}`)
+      } else {
+        router.push(`/order-manual/ref/${sharedRef}`)
+      }
     } catch (e: any) {
       setError(e.message || "Алдаа гарлаа")
       setSubmitting(false)
