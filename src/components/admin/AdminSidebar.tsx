@@ -25,17 +25,23 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "ҮНДСЭН",
     items: [
       { name: "Хянах самбар", url: "/admin/home", icon: LayoutDashboard, roles: ["ADMIN", "CARGO_ADMIN"] },
+      { name: "Хайх (Данс, Утас)", url: "/admin/orders/search", icon: Search, roles: ["ADMIN", "CARGO_ADMIN"] },
     ]
   },
   {
     label: "ЗАХИАЛГА",
     items: [
       { name: "Шинэ & Хүлээгдэж буй", url: "/admin/orders/pending", icon: Clock, highlight: true, roles: ["ADMIN", "CARGO_ADMIN"] },
+      { name: "Хүргэлтийн захиалга", url: "/admin/orders/delivery", icon: Truck, highlight: true, roles: ["ADMIN", "CARGO_ADMIN"] },
       { name: "Бүх захиалга", url: "/admin/orders", icon: ShoppingBag, roles: ["ADMIN", "CARGO_ADMIN"] },
+    ]
+  },
+  {
+    label: "АРХИВ / ТҮҮХ",
+    items: [
       { name: "Өөрөө авсан захиалга", url: "/admin/orders/picked-up", icon: Handshake, roles: ["ADMIN", "CARGO_ADMIN"] },
       { name: "Хүргэгдсэн захиалга", url: "/admin/orders/delivered", icon: PackageCheck, roles: ["ADMIN", "CARGO_ADMIN"] },
       { name: "Цуцлагдсан захиалга", url: "/admin/orders/rejected", icon: XCircle, roles: ["ADMIN", "CARGO_ADMIN"] },
-      { name: "Хайх (Данс, Утас)", url: "/admin/orders/search", icon: Search, roles: ["ADMIN", "CARGO_ADMIN"] },
     ]
   },
   {
@@ -46,7 +52,7 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
     ]
   },
   {
-    label: "СИСТЕМ & ТӨЛӨВ",
+    label: "СИСТЕМ & ТОХИРГОО",
     items: [
       { name: "Захиалгын статус", url: "/admin/order-status", icon: Activity, roles: ["ADMIN"] },
       { name: "Хэрэглэгчид", url: "/admin/users", icon: Users, roles: ["ADMIN"] },

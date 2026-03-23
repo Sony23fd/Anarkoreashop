@@ -169,8 +169,8 @@ function OrderGroup({ orders, completed = false }: { orders: any[]; completed?: 
           ) : anyDeliverable ? (
             <div className="space-y-2">
               <p className="text-sm font-medium text-slate-700">🚚 Хүргэлт захиалах боломжтой</p>
-              {/* Pass the first deliverable order's id */}
-              <DeliveryRequestButton orderId={orders.find((o: any) => o.status?.isDeliverable)?.id} />
+              {/* Pass all active order ids for bulk delivery update */}
+              <DeliveryRequestButton orderIds={orders.map((o: any) => o.id)} />
             </div>
           ) : (
             <div className="text-xs text-slate-400 bg-white rounded-lg px-4 py-3 border border-dashed">

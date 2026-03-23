@@ -120,6 +120,8 @@ model Order {
   
   cargoFee       Decimal?  @default(0)
   wantsDelivery  Boolean   @default(false)   // Customer chose home delivery
+  deliveryFeePaid Boolean  @default(false)   // Paid the extra delivery fee online
+  deliveryQpayInvoiceId String?              // ID of the dedicated delivery QPay invoice
   paymentProofUrl String?                    // URL of uploaded payment screenshot
   paymentStatus   String   @default("PENDING") // PENDING | CONFIRMED | REJECTED
   totalAmount     Decimal? @default(0)        // Total including delivery fee
@@ -135,6 +137,10 @@ model Order {
   ebarimtQr       String?                     // QR data (for rendering the receipt QR)
   ebarimtLottery  String?                     // Lottery number
   ebarimtAmount   String?                     // Amount registered in E-barimt
+  
+  // Tracking fields
+  creationSource  String?  @default("WEB")    // "WEB" or "ADMIN"
+  createdByAdmin  String?                     // Name or ID of the admin who created it
   
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt

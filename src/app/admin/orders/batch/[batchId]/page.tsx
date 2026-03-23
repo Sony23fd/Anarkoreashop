@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/sheet"
 import { ExportButton } from "./ExportButton"
 import { ImportButton } from "./ImportButton"
+import { BatchOrdersClient } from "./BatchOrdersClient"
 
 export default async function BatchDetailPage({ params }: { params: Promise<{ batchId: string }> }) {
   const { batchId } = await params;
@@ -185,132 +186,8 @@ export default async function BatchDetailPage({ params }: { params: Promise<{ ba
         </div>
       </div>
 
-      {/* Table Section */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border space-y-6">
-        {/* Filters and Bulk Actions */}
-        <div className="flex flex-col md:flex-row justify-between gap-4">
-          <Input 
-            placeholder="Дансны дугаараар хайх" 
-            className="md:w-1/3 bg-slate-50 border-slate-200"
-          />
-          <div className="flex flex-col md:flex-row gap-4 md:w-2/3 justify-end lg:items-center">
-            <select className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus-visible:outline-none">
-              <option value="">Бүх хувийн статус харах</option>
-              {statuses?.map((s: any) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-            
-            <form action={async (formData) => {
-              "use server"
-              const { updateBatchOrderStatuses } = await import("@/app/actions/order-actions")
-              const statusId = formData.get("statusId") as string
-              if (statusId) {
-                const res = await updateBatchOrderStatuses(batch.id, statusId)
-                if (!res.success) console.error("BULK UPDATE FAILED:", res.error)
-              }
-            }} className="flex gap-2 items-center px-4 py-1.5 border border-indigo-100 rounded-md bg-indigo-50/30">
-              <span className="text-sm font-semibold text-indigo-700 whitespace-nowrap hidden sm:block">Нийт статусыг солих:</span>
-              <select name="statusId" required className="rounded-md border border-indigo-200 bg-white px-2 py-1.5 text-sm focus:outline-none focus:border-indigo-400">
-                <option value="">-- Сонгох --</option>
-                {statuses?.map((s: any) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-              <Button type="submit" size="sm" className="h-8 bg-indigo-600 hover:bg-indigo-700">Хадгалах</Button>
-            </form>
-          </div>
-        </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto w-full">
-          <table className="w-full text-sm text-left border-collapse">
-            <thead className="bg-[#ffffff] border-b-2 text-[10px] uppercase text-slate-400 font-bold whitespace-nowrap tracking-wider">
-              <tr>
-                <th className="px-4 py-3">Захиалгын дугаар &nbsp;</th>
-                <th className="px-4 py-3">Нэр &nbsp;</th>
-                <th className="px-4 py-3">Дансны дугаар &nbsp;</th>
-                <th className="px-4 py-3 text-center">Тоо &nbsp;</th>
-                <th className="px-4 py-3 text-center">Ирэх өдөр &nbsp;</th>
-                <th className="px-4 py-3 text-center">Хүргүүлэх өдөр &nbsp;</th>
-                <th className="px-4 py-3 text-center">Статус &nbsp;</th>
-                <th className="px-4 py-3 text-center">Хаяг &nbsp;</th>
-                <th className="px-4 py-3 text-center">Карго үнэ &nbsp;</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y relative">
-              {activeOrders.length > 0 ? (
-                activeOrders.map((order: any, idx: number) => {
-                  const unitCargoFee = Number(batch.cargoFeeStatus || 0) * Number(batch.product?.weight || 0);
-                  const orderCustomFee = Number(order.cargoFee || 0);
-                  const baseTotal = unitCargoFee * Number(order.quantity || 1);
-                  const finalCargoFee = orderCustomFee > 0 ? orderCustomFee * Number(order.quantity || 1) : baseTotal;
-
-                  return (
-                  <tr key={order.id} className="hover:bg-slate-50 border-b border-slate-100 transition-colors">
-                    <td className="px-4 py-6 font-medium text-slate-600">{order.orderNumber}</td>
-                    <td className="px-4 py-6 min-w-[200px]">
-                      <div className="text-slate-500 text-xs font-medium space-y-1">
-                        <p className="text-slate-800 text-sm uppercase">{order.customerName},</p>
-                        <p>{order.customerPhone},</p>
-                        <p>{batch.product?.name}</p>
-                        <p className="text-slate-800">ХААГААС: {finalCargoFee.toLocaleString()} ₮</p>
-                        <p className="uppercase text-[10px] tracking-wider text-slate-400 pt-1">Очирваань</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-6 text-slate-500 font-medium">{order.accountNumber}</td>
-                    <td className="px-4 py-6 font-semibold text-center text-slate-600">{order.quantity}</td>
-                    <td className="px-4 py-6 text-center">
-                      <div className="bg-slate-50 border rounded-md px-3 py-1.5 flex justify-between items-center w-[140px] shadow-sm text-slate-600 font-medium mx-auto">
-                        <span>{order.arrivalDate ? new Date(order.arrivalDate).toLocaleDateString() : "-"}</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                      </div>
-                    </td>
-                    <td className="px-4 py-6 text-center">
-                      <div className="bg-slate-50 border rounded-md px-3 py-1.5 flex justify-between items-center w-[140px] shadow-sm text-slate-600 font-medium mx-auto">
-                        <span>{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : "-"}</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                      </div>
-                    </td>
-                    <td className="px-4 py-6 min-w-[150px] text-center">
-                      <div className="flex items-center gap-2 justify-center">
-                        <StatusBadge status={order.status?.name || "Шинэ"} color={order.status?.color} />
-                      </div>
-                    </td>
-                    <td className="px-4 py-6 text-center">
-                      <span className="text-slate-400 font-medium">{order.deliveryAddress || "-"}</span>
-                    </td>
-                    <td className="px-4 py-6 text-center">
-                       <span className="font-semibold text-slate-800">{finalCargoFee.toLocaleString()} ₮</span>
-                    </td>
-                  </tr>
-                )})
-              ) : (
-                <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center text-slate-500">
-                    Энэ захиалга дотор бүртгэгдсэн хэрэглэгчийн захиалга алга байна.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Pagination placeholder matching screenshot */}
-        <div className="flex justify-between items-center text-xs text-slate-500 pt-4">
-          <div className="flex items-center space-x-1">
-            <button className="px-2 py-1 text-slate-400 hover:text-slate-600 font-bold">&lt;</button>
-            <button className="px-2 py-1 bg-white border border-[#4F46E5] text-[#4F46E5] rounded font-bold">1</button>
-            <button className="px-2 py-1 text-slate-400 hover:text-slate-600 font-bold">&gt;</button>
-          </div>
-          <div>
-            <select className="border border-slate-200 rounded bg-slate-50 px-3 py-1.5 text-slate-600 font-medium">
-              <option>25</option>
-              <option>50</option>
-            </select>
-          </div>
-        </div>
-      </div>
+      {/* Client Component with Checkboxes */}
+      <BatchOrdersClient activeOrders={activeOrders} batch={batch} statuses={statuses || []} />
     </div>
   )
 }

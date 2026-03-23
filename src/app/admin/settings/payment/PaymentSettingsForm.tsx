@@ -9,6 +9,7 @@ const FIELDS = [
   { key: "bank_account", label: "Дансны дугаар", placeholder: "5071443386" },
   { key: "bank_holder", label: "Данс эзэмшигч", placeholder: "Отгоо" },
   { key: "bank_note", label: "Нэмэлт тайлбар", placeholder: "Anar Korea Shop" },
+  { key: "delivery_fee", label: "Хүргэлтийн хураамж /QPay/ (₮)", placeholder: "6000" },
 ]
 
 export function PaymentSettingsForm({ settings }: { settings: Record<string, string> }) {

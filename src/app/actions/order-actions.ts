@@ -89,6 +89,61 @@ export async function getDeliveredOrders(days: number = 30) {
   }
 }
 
+export async function getDeliveryOrders() {
+  try {
+    const orders = await db.order.findMany({
+      where: { 
+        wantsDelivery: true,
+        deliveryAddress: { not: "" },
+        status: { isFinal: false }
+      } as any,
+      include: {
+        batch: { include: { product: true, category: true } },
+        status: true
+      },
+      orderBy: { updatedAt: "desc" }
+    })
+    return { success: true, orders: JSON.parse(JSON.stringify(orders)) }
+  } catch (error: any) {
+    return { success: false, error: error.message, orders: [] }
+  }
+}
+
+export async function confirmDeliveryGroup(orderIds: string[]) {
+  try {
+    const adminMode = await getCurrentAdmin()
+    if (!adminMode) return { success: false, error: "Хандах эрхгүй" }
+
+    const deliveredStatus = await db.orderStatusType.findFirst({
+      where: { name: "Хүргэлтээр авсан", isFinal: true }
+    })
+    if (!deliveredStatus) return { success: false, error: "Хүргэлтээр авсан төлөв олдсонгүй" }
+
+    await db.order.updateMany({
+      where: { id: { in: orderIds } },
+      data: { statusId: deliveredStatus.id } as any
+    })
+
+    await logActivity({
+      userId: adminMode.id,
+      userName: adminMode.name || "Карго Админ",
+      userRole: adminMode.role,
+      action: "Хүргэлт баталгаажуулав",
+      target: "Захиалгууд",
+      detail: `${orderIds.length} ширхэг захиалгыг хүргэгдсэн гэж хүлээн авлаа`,
+    })
+
+    revalidatePath("/admin/orders/delivery")
+    revalidatePath("/admin/orders/delivered")
+    revalidatePath("/admin/orders")
+    
+    return { success: true }
+  } catch(err: any) {
+    console.error("confirmDeliveryGroup error:", err)
+    return { success: false, error: err.message }
+  }
+}
+
 export async function getRejectedOrders(days: number = 30) {
   try {
     const whereClause: any = {
@@ -190,6 +245,7 @@ export async function createOrder(data: {
           paymentStatus: "PENDING",
           totalAmount: data.totalAmount,
           transactionRef,
+          creationSource: "WEB",
           ...(defaultStatus?.id && { statusId: defaultStatus.id })
         } as any
       });
@@ -254,6 +310,9 @@ export async function addOrderToBatch(batchId: string, data: {
       });
       if (!batch) throw new Error("Batch not found");
 
+      const admin = await getCurrentAdmin();
+      const adminName = admin ? (admin.name || "Сайтын админ") : "Админ";
+
       const defaultStatus = await tx.orderStatusType.findFirst();
       const statusId = data.statusId || defaultStatus?.id;
 
@@ -264,14 +323,17 @@ export async function addOrderToBatch(batchId: string, data: {
           customerPhone: data.customerPhone,
           ...(data.accountNumber && { accountNumber: data.accountNumber }),
           ...(data.deliveryAddress && { deliveryAddress: data.deliveryAddress }),
+          wantsDelivery: !!data.deliveryAddress && data.deliveryAddress.trim() !== "",
           quantity: data.quantity,
           batchId: batchId,
           paymentStatus: "CONFIRMED", // Admin-added orders are automatically confirmed
+          creationSource: "ADMIN",
+          createdByAdmin: adminName,
           ...(statusId && { statusId: statusId }),
           ...(data.cargoFee !== undefined && { cargoFee: data.cargoFee }),
           ...(data.arrivalDate && { arrivalDate: new Date(data.arrivalDate) }),
           ...(data.deliveryDate && { deliveryDate: new Date(data.deliveryDate) }),
-        }
+        } as any
       });
 
       return { order, categoryId: batch.categoryId };
@@ -353,7 +415,7 @@ export async function updateBatchOrderStatuses(batchId: string, statusId: string
     
     return { success: true, count: orderIdsToUpdate.length }
   } catch (error: any) {
-    console.error("Failed to update batch order statuses:", error)
+      console.error("Failed to update batch order statuses:", error)
     return { success: false, error: "Failed to update statuses" }
   }
 }
@@ -365,10 +427,48 @@ export async function updateOrderStatus(orderId: string, statusId: string) {
       data: { statusId }
     })
     revalidatePath("/admin/orders/search")
+    revalidatePath("/admin/orders")
     return { success: true, order: JSON.parse(JSON.stringify(order)) }
   } catch (error) {
     console.error("Failed to update order status:", error)
     return { success: false, error: "Failed to update status" }
+  }
+}
+
+export async function updateBatchOrderStatusesByIds(orderIds: string[], statusId: string) {
+  try {
+    const adminMode = await getCurrentAdmin()
+    if (!adminMode) return { success: false, error: "Хандах эрхгүй" }
+
+    if (!orderIds || orderIds.length === 0) {
+      return { success: false, error: "Захиалга сонгогдоогүй байна" }
+    }
+
+    await db.order.updateMany({
+      where: { id: { in: orderIds } },
+      data: { statusId }
+    })
+
+    const status = await db.orderStatusType.findUnique({ where: { id: statusId } })
+
+    await logActivity({
+      userId: adminMode.id,
+      userName: adminMode.name || "Сайтын админ",
+      userRole: adminMode.role,
+      action: "Багц статус баталгаажуулав",
+      target: "Захиалгууд",
+      detail: `${orderIds.length} ширхэг захиалгыг мөрийг нь түүвэрлэн '${status?.name || statusId}' төлөвт шилжүүллээ`,
+    })
+
+    // Revalidate widespread paths due to mass update
+    revalidatePath("/admin/orders/search")
+    revalidatePath("/admin/orders/batch/[batchId]", "page")
+    revalidatePath("/admin/orders")
+
+    return { success: true, count: orderIds.length }
+  } catch (error: any) {
+    console.error("Failed to update bulk order statuses by IDs:", error)
+    return { success: false, error: "Failed to update bulk statuses" }
   }
 }
 
@@ -424,35 +524,169 @@ export async function getQPayInvoiceForOrder(transactionRef: string) {
   }
 }
 
-
-
 /**
  * Customer requests home delivery from the track page.
- * Only allowed if the order's current status has isDeliverable=true.
+ * Generates a QPay invoice for the delivery fee.
  */
-export async function requestDelivery(orderId: string, deliveryAddress: string) {
+export async function requestDelivery(orderIds: string[], deliveryAddress: string) {
   try {
-    const order = await (db.order as any).findUnique({
-      where: { id: orderId },
+    const orders = await (db.order as any).findMany({
+      where: { id: { in: orderIds } },
       include: { status: true }
     })
-    if (!order) return { success: false, error: "Захиалга олдсонгүй" }
-    if (order.wantsDelivery) return { success: false, error: "Хүргэлт аль хэдийн захиалагдсан байна" }
-    if (!order.status?.isDeliverable) {
-      return { success: false, error: "Бараа одоогоор ирээгүй байна. Ирсний дараа хүргэлт захиалах боломжтой." }
+    if (!orders || orders.length === 0) return { success: false, error: "Захиалга олдсонгүй" }
+    
+    // Only target orders that are deliverable and haven't requested delivery yet
+    const eligibleOrders = orders.filter((o: any) => !o.wantsDelivery && o.status?.isDeliverable)
+    if (eligibleOrders.length === 0) return { success: false, error: "Хүргэлт захиалах боломжтой бараа олдсонгүй" }
+
+    const eligibleIds = eligibleOrders.map((o: any) => o.id)
+
+    const { getShopSettings } = await import("./settings-actions")
+    const settings = await getShopSettings()
+    const deliveryFee = Number(settings.delivery_fee || "6000")
+    const qpayEnabled = settings.qpay_enabled === "true"
+
+    if (deliveryFee <= 0) {
+      // Free delivery: immediate confirm
+      await (db.order as any).updateMany({
+        where: { id: { in: eligibleIds } },
+        data: {
+          wantsDelivery: true,
+          deliveryFeePaid: true,
+          deliveryAddress: deliveryAddress.trim()
+        }
+      })
+      revalidatePath("/track")
+      return { success: true, directlyConfirmed: true }
     }
-    await (db.order as any).update({
-      where: { id: orderId },
+
+    if (!qpayEnabled) {
+      // Return manual instruction data instead of updating DB immediately
+      return { 
+        success: true, 
+        isManual: true, 
+        manualData: { 
+          fee: deliveryFee,
+          bank_name: settings.bank_name || "",
+          bank_account: settings.bank_account || "",
+          bank_holder: settings.bank_holder || "",
+          bank_note: settings.bank_note || ""
+        }
+      }
+    }
+
+    // Generate QPay Invoice
+    const { createQPayInvoice } = await import("@/lib/qpay")
+    const deliveryRef = `DEL-${eligibleOrders[0].orderNumber}-${Date.now().toString().slice(-4)}`
+    
+    const invoiceRes = await createQPayInvoice({
+      transactionRef: deliveryRef,
+      amount: deliveryFee,
+      description: `AnarKoreaShop - Хүргэлтийн хураамж (Order #${eligibleOrders[0].orderNumber} + ${eligibleOrders.length - 1} бүлэг)`
+    })
+
+    if (!invoiceRes.success || !invoiceRes.data) {
+      return { success: false, error: invoiceRes.error || "QPay нэхэмжлэх үүсгэхэд алдаа гарлаа" }
+    }
+
+    const { invoice_id, qr_text, urls } = invoiceRes.data
+
+    await (db.order as any).updateMany({
+      where: { id: { in: eligibleIds } },
       data: {
-        wantsDelivery: true,
-        deliveryAddress: deliveryAddress.trim()
+        deliveryAddress: deliveryAddress.trim(),
+        deliveryQpayInvoiceId: invoice_id
       }
     })
+
     revalidatePath("/track")
-    return { success: true }
+    return { 
+      success: true, 
+      qpayQrText: qr_text, 
+      qpayUrls: urls,
+      invoiceId: invoice_id,
+      eligibleIds
+    }
   } catch (err: any) {
     console.error("requestDelivery error:", err)
     return { success: false, error: err.message }
+  }
+}
+
+export async function confirmManualDeliveryRequest(orderIds: string[], address: string) {
+  try {
+    await (db.order as any).updateMany({
+      where: { id: { in: orderIds } },
+      data: {
+        wantsDelivery: true,
+        deliveryFeePaid: false, // Pending manual verification by admin
+        deliveryAddress: address.trim()
+      }
+    })
+    revalidatePath("/track")
+    revalidatePath("/admin/orders")
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err.message }
+  }
+}
+
+export async function checkDeliveryPayment(orderIds: string[], invoiceId: string) {
+  try {
+    const { checkQPayPayment } = await import("@/lib/qpay")
+    const checkRes = await checkQPayPayment(invoiceId)
+    
+    if (checkRes.success && checkRes.data && checkRes.data.paid_amount > 0) {
+      await (db.order as any).updateMany({
+        where: { id: { in: orderIds } },
+        data: {
+          wantsDelivery: true,
+          deliveryFeePaid: true
+        }
+      })
+      revalidatePath("/track")
+      revalidatePath("/admin/orders")
+      return { success: true, paid: true }
+    }
+    
+    return { success: true, paid: false }
+  } catch (err: any) {
+    console.error("checkDeliveryPayment error:", err)
+    return { success: false, error: err.message }
+  }
+}
+
+export async function forceAddDeliveryAddress(orderIds: string[], address: string) {
+  try {
+    const adminMode = await getCurrentAdmin()
+    if (!adminMode) return { success: false, error: "Хандах эрхгүй" }
+
+    await (db.order as any).updateMany({
+      where: { id: { in: orderIds } },
+      data: {
+        wantsDelivery: true,
+        deliveryFeePaid: true,
+        deliveryAddress: address.trim()
+      }
+    })
+
+    await logActivity({
+      userId: adminMode.id,
+      userName: adminMode.name || "Админ",
+      userRole: adminMode.role,
+      action: "Хүргэлт нэмэв",
+      target: "Захиалга багц",
+      detail: `${orderIds.length} ширхэг захиалга дээр хаяг бүртгэж хүргэлтэнд гаргав.`,
+    })
+
+    revalidatePath("/admin/orders/search")
+    revalidatePath("/admin/orders/batch/[batchId]", "page")
+    revalidatePath("/admin/orders/delivery")
+    
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, error: error.message }
   }
 }
 
