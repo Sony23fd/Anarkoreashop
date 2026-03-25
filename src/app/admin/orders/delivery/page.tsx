@@ -1,11 +1,19 @@
 import { getDeliveryOrders } from "@/app/actions/order-actions"
 import { Truck, Package, User } from "lucide-react"
 import { DeliveryGroupCard } from "./DeliveryGroupCard"
+import { DeliveryFilter } from "./DeliveryFilter"
 
 export const dynamic = "force-dynamic"
 
-export default async function DeliveryQueuePage() {
-  const { orders } = await getDeliveryOrders()
+export default async function DeliveryQueuePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>
+}) {
+  const resolvedParams = await searchParams
+  const dateFilter = resolvedParams.date
+
+  const { orders } = await getDeliveryOrders(dateFilter)
 
   // Group by customerPhone
   const grouped: Record<string, any[]> = {}
@@ -25,9 +33,10 @@ export default async function DeliveryQueuePage() {
             Хүргэлтийн захиалгууд
           </h1>
           <p className="text-slate-500 text-sm mt-1">
-            Хүргэлт шаардлагатай <strong>{orders?.length || 0}</strong> ширхэг бараа — <strong>{groups.length}</strong> багц
+            {dateFilter ? <strong>{dateFilter}</strong> : "Нийт"} өдөрт хүргэлт шаардлагатай <strong>{orders?.length || 0}</strong> ширхэг бараа — <strong>{groups.length}</strong> багц
           </p>
         </div>
+        <DeliveryFilter />
       </div>
 
       {groups.length === 0 ? (

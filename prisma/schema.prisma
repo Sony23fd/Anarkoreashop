@@ -114,6 +114,7 @@ model Order {
   arrivalDate    DateTime? // ирэх өдөр
   deliveryDate   DateTime? // хүргүүлэх өдөр
   deliveryAddress String?  // Хаяг
+  deliveryRequestedAt DateTime? // Хүргэлт яг захиалсан цаг хугацаа
   
   statusId       String?
   status         OrderStatusType? @relation(fields: [statusId], references: [id])

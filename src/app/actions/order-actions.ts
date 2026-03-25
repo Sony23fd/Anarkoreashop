@@ -89,14 +89,41 @@ export async function getDeliveredOrders(days: number = 30) {
   }
 }
 
-export async function getDeliveryOrders() {
+export async function getDeliveryOrders(date?: string) {
   try {
-    const orders = await db.order.findMany({
-      where: { 
-        wantsDelivery: true,
-        deliveryAddress: { not: "" },
-        status: { isFinal: false }
-      } as any,
+    const whereClause: any = { 
+      wantsDelivery: true,
+      deliveryAddress: { not: "" },
+      status: { isFinal: false }
+    }
+
+    if (date) {
+      // date is in YYYY-MM-DD
+      const startOfDay = new Date(date)
+      startOfDay.setHours(0, 0, 0, 0)
+      
+      const endOfDay = new Date(date)
+      endOfDay.setHours(23, 59, 59, 999)
+      
+      whereClause.OR = [
+        {
+          deliveryRequestedAt: {
+            gte: startOfDay,
+            lte: endOfDay
+          }
+        },
+        {
+          deliveryRequestedAt: null,
+          updatedAt: {
+            gte: startOfDay,
+            lte: endOfDay
+          }
+        }
+      ]
+    }
+
+    const orders = await (db.order as any).findMany({
+      where: whereClause,
       include: {
         batch: { include: { product: true, category: true } },
         status: true
@@ -554,7 +581,8 @@ export async function requestDelivery(orderIds: string[], deliveryAddress: strin
         data: {
           wantsDelivery: true,
           deliveryFeePaid: true,
-          deliveryAddress: deliveryAddress.trim()
+          deliveryAddress: deliveryAddress.trim(),
+          deliveryRequestedAt: new Date()
         }
       })
       revalidatePath("/track")
@@ -596,7 +624,8 @@ export async function requestDelivery(orderIds: string[], deliveryAddress: strin
       where: { id: { in: eligibleIds } },
       data: {
         deliveryAddress: deliveryAddress.trim(),
-        deliveryQpayInvoiceId: invoice_id
+        deliveryQpayInvoiceId: invoice_id,
+        deliveryRequestedAt: new Date()
       }
     })
 
@@ -621,7 +650,8 @@ export async function confirmManualDeliveryRequest(orderIds: string[], address: 
       data: {
         wantsDelivery: true,
         deliveryFeePaid: false, // Pending manual verification by admin
-        deliveryAddress: address.trim()
+        deliveryAddress: address.trim(),
+        deliveryRequestedAt: new Date()
       }
     })
     revalidatePath("/track")
@@ -667,7 +697,8 @@ export async function forceAddDeliveryAddress(orderIds: string[], address: strin
       data: {
         wantsDelivery: true,
         deliveryFeePaid: true,
-        deliveryAddress: address.trim()
+        deliveryAddress: address.trim(),
+        deliveryRequestedAt: new Date()
       }
     })
 
