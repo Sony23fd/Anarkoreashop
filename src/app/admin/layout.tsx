@@ -6,6 +6,10 @@ import { getCurrentAdmin } from "@/lib/auth"
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const admin = await getCurrentAdmin()
 
+  if (!admin) {
+    return <div className="min-h-screen w-full bg-slate-50">{children}</div>
+  }
+
   return (
     <div className="flex h-screen w-full bg-slate-50">
       <AdminSidebar className="hidden md:flex" role={admin?.role || "CARGO_ADMIN"} />

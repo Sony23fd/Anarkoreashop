@@ -23,9 +23,8 @@ const SESSION_OPTIONS = {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Skip login page and API routes
+  // Skip API routes and statics
   if (
-    pathname === "/admin/login" ||
     pathname.startsWith("/api/admin/login") ||
     pathname.startsWith("/api/admin/logout") ||
     pathname.startsWith("/_next") ||
@@ -44,6 +43,13 @@ export async function middleware(request: NextRequest) {
   // Check session
   const response = NextResponse.next()
   const session = await getIronSession<AdminSessionData>(request, response, SESSION_OPTIONS)
+
+  if (pathname === "/admin/login") {
+    if (session.isLoggedIn && session.userId) {
+      return NextResponse.redirect(new URL("/admin/orders", request.url))
+    }
+    return response
+  }
 
   if (!session.isLoggedIn || !session.userId) {
     const loginUrl = new URL("/admin/login", request.url)

@@ -14,11 +14,41 @@ import { Plus } from "lucide-react"
 import { BatchSaleToggle } from "./BatchSaleToggle"
 import { ImageUploader } from "@/components/admin/ImageUploader"
 import { VideoUploader } from "@/components/admin/VideoUploader"
+import { ProductFilters } from "@/components/admin/ProductFilters"
 
 export const dynamic = "force-dynamic"
 
-export default async function AdminProductsPage() {
+export default async function AdminProductsPage({ searchParams }: { searchParams: Promise<{ stock?: string, sort?: string }> }) {
+  const p = await searchParams;
+  const stockFilter = p.stock || "all";
+  const sortFilter = p.sort || "remaining_desc"; // user requested highest remaining first
+
   const { products, success } = await getProducts()
+  
+  let filteredProducts = products || [];
+  // 1. Filter first
+  if (stockFilter === "in_stock") {
+    filteredProducts = filteredProducts.filter((b: any) => (b.targetQuantity - (b._calculatedOrderedSum || 0)) > 0);
+  } else if (stockFilter === "out_of_stock") {
+    filteredProducts = filteredProducts.filter((b: any) => (b.targetQuantity - (b._calculatedOrderedSum || 0)) <= 0);
+  }
+
+  // 2. Sort second
+  filteredProducts = filteredProducts.sort((a: any, b: any) => {
+    const aRem = a.targetQuantity - (a._calculatedOrderedSum || 0);
+    const bRem = b.targetQuantity - (b._calculatedOrderedSum || 0);
+
+    if (sortFilter === "remaining_desc") {
+      return bRem - aRem;
+    } else if (sortFilter === "remaining_asc") {
+      return aRem - bRem;
+    } else if (sortFilter === "newest") {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    } else if (sortFilter === "oldest") {
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    }
+    return 0;
+  });
 
   return (
     <div className="space-y-6">
@@ -28,64 +58,67 @@ export default async function AdminProductsPage() {
           <p className="text-sm text-slate-500 mt-1">Монголд бэлэн байгаа барааг нүүр хуудсанд гаргах</p>
         </div>
         
-        <Sheet>
-          <SheetTrigger className="inline-flex items-center justify-center rounded-md bg-[#4F46E5] px-4 py-2 text-sm font-medium text-white hover:bg-[#4338ca]">
-            <Plus className="w-4 h-4 mr-2" />
-            Бараа нэмэх
-          </SheetTrigger>
-          <SheetContent className="overflow-y-auto w-full sm:max-w-md">
-            <SheetHeader>
-              <SheetTitle>Шинэ бараа нэмэх</SheetTitle>
-              <SheetDescription>Дэлгүүрт худалдаалах шинэ барааны мэдээллийг оруулна уу.</SheetDescription>
-            </SheetHeader>
-            <form action={async (formData) => {
-              "use server"
-              await createProduct({
-                name: formData.get("name") as string,
-                description: formData.get("description") as string,
-                targetQuantity: Number(formData.get("targetQuantity") || 0),
-                remainingQuantity: Number(formData.get("remainingQuantity") || 0),
-                price: Number(formData.get("price") || 0),
-                weight: Number(formData.get("weight") || 0),
-                sourceLink: formData.get("sourceLink") as string,
-              })
-            }} className="space-y-4 mt-6">
-              <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium">Барааны нэр</label>
-                <Input id="name" name="name" required placeholder="Нэр..." />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="description" className="text-sm font-medium">Тайлбар</label>
-                <Textarea id="description" name="description" placeholder="Барааны дэлгэрэнгүй..." />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <ProductFilters currentStock={stockFilter} currentSort={sortFilter} />
+          <Sheet>
+            <SheetTrigger className="inline-flex items-center justify-center rounded-md bg-[#4F46E5] px-4 py-2 text-sm font-medium text-white hover:bg-[#4338ca]">
+              <Plus className="w-4 h-4 mr-2" />
+              Бараа нэмэх
+            </SheetTrigger>
+            <SheetContent className="overflow-y-auto w-full sm:max-w-md">
+              <SheetHeader>
+                <SheetTitle>Шинэ бараа нэмэх</SheetTitle>
+                <SheetDescription>Дэлгүүрт худалдаалах шинэ барааны мэдээллийг оруулна уу.</SheetDescription>
+              </SheetHeader>
+              <form action={async (formData) => {
+                "use server"
+                await createProduct({
+                  name: formData.get("name") as string,
+                  description: formData.get("description") as string,
+                  targetQuantity: Number(formData.get("targetQuantity") || 0),
+                  remainingQuantity: Number(formData.get("remainingQuantity") || 0),
+                  price: Number(formData.get("price") || 0),
+                  weight: Number(formData.get("weight") || 0),
+                  sourceLink: formData.get("sourceLink") as string,
+                })
+              }} className="space-y-4 mt-6">
                 <div className="space-y-2">
-                  <label htmlFor="price" className="text-sm font-medium">Үнэ (₮)</label>
-                  <Input id="price" name="price" type="number" required placeholder="0" />
+                  <label htmlFor="name" className="text-sm font-medium">Барааны нэр</label>
+                  <Input id="name" name="name" required placeholder="Нэр..." />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="weight" className="text-sm font-medium">Жин (кг)</label>
-                  <Input id="weight" name="weight" type="number" step="0.01" placeholder="0.0" />
+                  <label htmlFor="description" className="text-sm font-medium">Тайлбар</label>
+                  <Textarea id="description" name="description" placeholder="Барааны дэлгэрэнгүй..." />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="price" className="text-sm font-medium">Үнэ (₮)</label>
+                    <Input id="price" name="price" type="number" required placeholder="0" />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="weight" className="text-sm font-medium">Жин (кг)</label>
+                    <Input id="weight" name="weight" type="number" step="0.01" placeholder="0.0" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="targetQuantity" className="text-sm font-medium">Зорилтот тоо</label>
+                    <Input id="targetQuantity" name="targetQuantity" type="number" required placeholder="0" />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="remainingQuantity" className="text-sm font-medium">Үлдэгдэл</label>
+                    <Input id="remainingQuantity" name="remainingQuantity" type="number" required placeholder="0" />
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <label htmlFor="targetQuantity" className="text-sm font-medium">Зорилтот тоо</label>
-                  <Input id="targetQuantity" name="targetQuantity" type="number" required placeholder="0" />
+                  <label htmlFor="sourceLink" className="text-sm font-medium">Эх сурвалжийн холбоос</label>
+                  <Input id="sourceLink" name="sourceLink" type="url" placeholder="https://..." />
                 </div>
-                <div className="space-y-2">
-                  <label htmlFor="remainingQuantity" className="text-sm font-medium">Үлдэгдэл</label>
-                  <Input id="remainingQuantity" name="remainingQuantity" type="number" required placeholder="0" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="sourceLink" className="text-sm font-medium">Эх сурвалжийн холбоос</label>
-                <Input id="sourceLink" name="sourceLink" type="url" placeholder="https://..." />
-              </div>
-              <Button type="submit" className="w-full bg-[#4F46E5] mt-4">Хадгалах</Button>
-            </form>
-          </SheetContent>
-        </Sheet>
+                <Button type="submit" className="w-full bg-[#4F46E5] mt-4">Хадгалах</Button>
+              </form>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-lg shadow-sm w-full border">
@@ -110,17 +143,15 @@ export default async function AdminProductsPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {success && products && products.length > 0 ? (
-                products.map((batch: any) => (
+              {success && filteredProducts && filteredProducts.length > 0 ? (
+                filteredProducts.map((batch: any) => (
                   <tr key={batch.id} className="hover:bg-slate-50/50">
                     <td className="px-4 py-4 font-medium">#{batch.batchNumber}</td>
                     <td className="px-4 py-4 font-medium text-slate-900 max-w-[200px] truncate">{batch.product?.name}</td>
                     <td className="px-4 py-4 text-slate-700 font-semibold">{batch.targetQuantity}</td>
                     <td className="px-4 py-4">
                       {(() => {
-                        const ordered = (batch.orders || [])
-                          .filter((o: any) => o.paymentStatus !== 'REJECTED' && o.status?.name !== 'Цуцлагдсан')
-                          .reduce((s: number, o: any) => s + o.quantity, 0)
+                        const ordered = batch._calculatedOrderedSum || 0
                         const remaining = batch.targetQuantity - ordered
                         return (
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -159,9 +190,7 @@ export default async function AdminProductsPage() {
                         batchId={batch.id}
                         initialEnabled={batch.isAvailableForSale ?? false}
                         initialFee={Number(batch.deliveryFee || 0)}
-                        dynamicRemainingQty={batch.targetQuantity - (batch.orders || [])
-                          .filter((o: any) => o.paymentStatus !== 'REJECTED' && o.status?.name !== 'Цуцлагдсан')
-                          .reduce((s: number, o: any) => s + o.quantity, 0)}
+                        dynamicRemainingQty={batch.targetQuantity - (batch._calculatedOrderedSum || 0)}
                         targetQty={batch.targetQuantity}
                       />
                     </td>

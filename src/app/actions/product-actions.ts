@@ -6,21 +6,40 @@ import { BatchStatus } from "@prisma/client"
 
 export async function getProducts() {
   try {
+    // Fetch only the batch data without the heavy orders array
     const batches = await db.batch.findMany({
       include: {
         product: true,
         category: true,
-        orders: { 
-          select: { 
-            quantity: true, 
-            paymentStatus: true,
-            status: { select: { name: true } }
-          } 
-        }
       },
       orderBy: { createdAt: "desc" },
-    })
-    return { success: true, products: JSON.parse(JSON.stringify(batches)) }
+    });
+
+    // Let the database quickly sum quantities for valid orders grouped by batch
+    const validOrderAggregations = await db.order.groupBy({
+      by: ['batchId'],
+      where: {
+        paymentStatus: { not: 'REJECTED' },
+        status: {
+          name: { not: 'Цуцлагдсан' }
+        }
+      },
+      _sum: {
+        quantity: true
+      }
+    });
+
+    const quantityMap = new Map();
+    validOrderAggregations.forEach(agg => {
+      quantityMap.set(agg.batchId, agg._sum.quantity || 0);
+    });
+
+    const enrichedBatches = batches.map(batch => ({
+      ...batch,
+      _calculatedOrderedSum: quantityMap.get(batch.id) || 0
+    }));
+
+    return { success: true, products: JSON.parse(JSON.stringify(enrichedBatches)) };
   } catch (error) {
     console.error("Failed to fetch batches:", error)
     return { success: false, error: "Failed to fetch batches" }
