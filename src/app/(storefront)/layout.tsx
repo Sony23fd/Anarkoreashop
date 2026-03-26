@@ -160,9 +160,14 @@ export default async function StorefrontLayout({ children }: { children: ReactNo
             </div>
           </div>
 
-          <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
-            <p>© {new Date().getFullYear()} <strong className="text-white font-medium">Anar Korea Shop</strong>. Бүх эрх хуулиар хамгаалагдсан.</p>
-            <div className="flex gap-6">
+          <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 w-full">
+            <div className="md:w-1/3 text-center md:text-left">
+              <p>© {new Date().getFullYear()} <strong className="text-white font-medium">Anar Korea Shop</strong>.</p>
+            </div>
+            <div className="md:w-1/3 text-center">
+              <p>Хөгжүүлсэн: <a href="https://www.facebook.com/engiineeer" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors hover:underline underline-offset-4">Engiineer</a></p>
+            </div>
+            <div className="md:w-1/3 flex justify-center md:justify-end gap-6">
               <a href="#" className="hover:text-white transition-colors">Үйлчилгээний нөхцөл</a>
               <a href="#" className="hover:text-white transition-colors">Нууцлалын бодлого</a>
             </div>
