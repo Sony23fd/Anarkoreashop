@@ -3,20 +3,26 @@ import Link from "next/link"
 import { FolderOpen, Archive } from "lucide-react"
 
 export const dynamic = "force-dynamic"
+import { DateRangeFilter } from "@/components/admin/DateRangeFilter"
 
-export default async function AdminOrdersCategoriesPage() {
-  const { categories, success } = await getCategories()
+export default async function AdminOrdersCategoriesPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
+  const p = await searchParams;
+  const days = p.days ? parseInt(p.days, 10) : 30;
+  const { categories, success } = await getCategories(days)
 
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-lg shadow-sm w-full border">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-slate-900">Захиалгын Ангиллууд (Сараар)</h1>
-          <Link href="/admin/orders/archived"
-            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 border rounded-lg px-3 py-1.5 hover:bg-slate-50 transition-colors">
-            <Archive className="w-4 h-4" />
-            Архив
-          </Link>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+          <h1 className="text-2xl font-bold text-slate-900">Идэвхтэй Ангиллууд</h1>
+          <div className="flex items-center gap-3">
+            <DateRangeFilter days={days} />
+            <Link href="/admin/orders/archived"
+              className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 border rounded-lg px-3 py-1.5 hover:bg-slate-50 transition-colors">
+              <Archive className="w-4 h-4" />
+              Архив
+            </Link>
+          </div>
         </div>
         
         <p className="text-sm text-slate-500 mb-6">

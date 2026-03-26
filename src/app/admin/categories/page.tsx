@@ -100,11 +100,11 @@ export default async function OrderCategoriesPage() {
                           <input type="hidden" name="id" value={cat.id} />
                           <div className="space-y-2">
                             <label htmlFor={`edit-name-${cat.id}`} className="text-sm font-medium">Ангиллын нэр</label>
-                            <Input id={`edit-name-${cat.id}`} name="name" defaultValue={cat.name} required />
+                            <Input id={`edit-name-${cat.id}`} name="name" defaultValue={cat.name || ""} required />
                           </div>
                           <div className="space-y-2">
                             <label htmlFor={`edit-fee-${cat.id}`} className="text-sm font-medium">Хүргэлтийн үнэ (₮)</label>
-                            <Input id={`edit-fee-${cat.id}`} name="deliveryFee" type="number" defaultValue={cat.deliveryFee?.toString() || "0"} />
+                            <Input id={`edit-fee-${cat.id}`} name="deliveryFee" type="number" defaultValue={cat.deliveryFee?.toString() ?? "0"} />
                           </div>
                           <DialogFooter>
                             <Button type="submit" className="bg-[#4F46E5] hover:bg-[#4338ca] text-white">Хадгалах</Button>

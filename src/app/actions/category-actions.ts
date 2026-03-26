@@ -3,10 +3,17 @@
 import { db } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
-export async function getCategories() {
+export async function getCategories(days: number = 30) {
   try {
+    const whereClause: any = { isArchived: false };
+    if (days > 0) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      whereClause.updatedAt = { gte: cutoffDate };
+    }
+
     const categories = await db.category.findMany({
-      where: { isArchived: false } as any,
+      where: whereClause,
       orderBy: { createdAt: "desc" },
       include: {
         batches: {
@@ -143,10 +150,17 @@ export async function unarchiveCategory(categoryId: string) {
   }
 }
 
-export async function getArchivedCategories() {
+export async function getArchivedCategories(days: number = 30) {
   try {
+    const whereClause: any = { isArchived: true };
+    if (days > 0) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      whereClause.updatedAt = { gte: cutoffDate };
+    }
+
     const categories = await (db.category as any).findMany({
-      where: { isArchived: true },
+      where: whereClause,
       orderBy: { updatedAt: "desc" },
       include: {
         batches: {

@@ -2,10 +2,14 @@ import { db } from "@/lib/db"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Package, Users, ShoppingCart, DollarSign, CheckCircle } from "lucide-react"
 import { DashboardCharts } from "./DashboardCharts"
+import { DateRangeFilter } from "@/components/admin/DateRangeFilter"
 
 export const dynamic = "force-dynamic"
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
+  const p = await searchParams;
+  const days = p.days ? parseInt(p.days, 10) : 30;
+
   const now = new Date();
   
   let totalRevenue = 0;
@@ -16,12 +20,19 @@ export default async function AdminDashboardPage() {
   let batchSales: { name: string, sales: number }[] = [];
 
   try {
-    const validOrderFilter = {
+    const validOrderFilter: any = {
       status: {
         isDefault: false,
         name: { not: "Цуцлагдсан" }
       }
     };
+    
+    let dateFilter: any = {};
+    if (days > 0) {
+      const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+      dateFilter = { updatedAt: { gte: cutoffDate } };
+      validOrderFilter.updatedAt = { gte: cutoffDate };
+    }
 
     // 1. Total Revenue (All orders that are progressed beyond Pending and not Cancelled)
     const revenueResult = await db.order.aggregate({
@@ -37,7 +48,10 @@ export default async function AdminDashboardPage() {
 
     // 3. Completed Orders
     completedOrdersCount = await db.order.count({
-      where: { status: { isFinal: true, name: { not: "Цуцлагдсан" } } }
+      where: { 
+        status: { isFinal: true, name: { not: "Цуцлагдсан" } },
+        ...dateFilter
+      }
     })
 
     // 4. Active Products
@@ -92,11 +106,14 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Хянах самбар</h1>
-        <p className="text-slate-500 mt-2 text-sm max-w-2xl">
-          Дэлгүүрийн өдөр тутмын үйл ажиллагаа болон борлуулалтын ерөнхий статистик.
-        </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Хянах самбар</h1>
+          <p className="text-slate-500 mt-2 text-sm max-w-2xl">
+            Дэлгүүрийн үйл ажиллагаа болон статистик.
+          </p>
+        </div>
+        <DateRangeFilter days={days} basePath="/admin/home" />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

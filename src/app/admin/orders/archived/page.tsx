@@ -2,24 +2,32 @@ import { getArchivedCategories, unarchiveCategory } from "@/app/actions/category
 import Link from "next/link"
 import { FolderOpen, ArchiveRestore, ArrowLeft, Archive } from "lucide-react"
 import { ArchiveCategoryButton } from "../category/[categoryId]/ArchiveCategoryButton"
+import { DateRangeFilter } from "@/components/admin/DateRangeFilter"
 
 export const dynamic = "force-dynamic"
 
-export default async function ArchivedCategoriesPage() {
-  const { categories } = await getArchivedCategories()
+export default async function ArchivedCategoriesPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
+  const p = await searchParams;
+  const days = p.days ? parseInt(p.days, 10) : 30;
+  const { categories } = await getArchivedCategories(days)
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/admin/orders" className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-          <ArrowLeft className="w-5 h-5 text-slate-600" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Archive className="w-6 h-6 text-slate-500" />
-            Архивласан ангиллууд
-          </h1>
-          <p className="text-sm text-slate-500 mt-0.5">Дууссан захиалгуудын түүх</p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link href="/admin/orders" className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+            <ArrowLeft className="w-5 h-5 text-slate-600" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+              <Archive className="w-6 h-6 text-slate-500" />
+              Архивласан ангиллууд
+            </h1>
+            <p className="text-sm text-slate-500 mt-0.5">Дууссан захиалгуудын түүх</p>
+          </div>
+        </div>
+        <div className="flex items-center">
+          <DateRangeFilter days={days} basePath="/admin/orders/archived" />
         </div>
       </div>
 

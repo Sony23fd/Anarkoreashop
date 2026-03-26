@@ -1,6 +1,6 @@
 import { getRejectedOrders } from "@/app/actions/order-actions"
 import { GroupRejectedActions } from "./GroupRejectedActions"
-import { RejectedFilter } from "./RejectedFilter"
+import { DateRangeFilter } from "@/components/admin/DateRangeFilter"
 import { ArchiveX, Package, Truck, User } from "lucide-react"
 
 export const dynamic = "force-dynamic"
@@ -32,7 +32,7 @@ export default async function RejectedOrdersPage({ searchParams }: { searchParam
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <RejectedFilter days={days} />
+          <DateRangeFilter days={days} />
         </div>
       </div>
 

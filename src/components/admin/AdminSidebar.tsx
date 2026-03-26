@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Package, ShoppingBag, Search, Activity, ListFilter, CheckCircle, XCircle, Clock, CreditCard, FileText, Truck, Users, Settings, Handshake, PackageCheck } from "lucide-react"
+import { LayoutDashboard, Package, ShoppingBag, Search, Activity, ListFilter, CheckCircle, XCircle, Clock, CreditCard, FileText, Truck, Users, Settings, Handshake, PackageCheck, Archive } from "lucide-react"
 
 type AdminRole = "ADMIN" | "CARGO_ADMIN"
 
@@ -42,6 +42,7 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
       { name: "Өөрөө авсан захиалга", url: "/admin/orders/picked-up", icon: Handshake, roles: ["ADMIN", "CARGO_ADMIN"] },
       { name: "Хүргэгдсэн захиалга", url: "/admin/orders/delivered", icon: PackageCheck, roles: ["ADMIN", "CARGO_ADMIN"] },
       { name: "Цуцлагдсан захиалга", url: "/admin/orders/rejected", icon: XCircle, roles: ["ADMIN", "CARGO_ADMIN"] },
+      { name: "Архивлагдсан багц", url: "/admin/orders/archived", icon: Archive, roles: ["ADMIN", "CARGO_ADMIN"] },
     ]
   },
   {
