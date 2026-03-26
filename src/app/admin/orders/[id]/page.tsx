@@ -207,8 +207,6 @@ export default async function BatchDetailPage({ params }: { params: Promise<{ id
                 <th className="px-4 py-3">Нэр &nbsp;</th>
                 <th className="px-4 py-3">Дансны дугаар &nbsp;</th>
                 <th className="px-4 py-3 text-center">Тоо &nbsp;</th>
-                <th className="px-4 py-3 text-center">Ирэх өдөр &nbsp;</th>
-                <th className="px-4 py-3 text-center">Хүргүүлэх өдөр &nbsp;</th>
                 <th className="px-4 py-3 text-center">Статус &nbsp;</th>
                 <th className="px-4 py-3 text-center">Хаяг &nbsp;</th>
                 <th className="px-4 py-3 text-center">Карго үнэ &nbsp;</th>
@@ -225,24 +223,12 @@ export default async function BatchDetailPage({ params }: { params: Promise<{ id
                         <p className="text-slate-800 text-sm uppercase">{order.customerName},</p>
                         <p>{order.customerPhone},</p>
                         <p>{batch.product?.name}</p>
-                        <p className="text-slate-800">ХААГААС: {Number(order.cargoFee || 0)}</p>
-                        <p className="uppercase text-[10px] tracking-wider text-slate-400 pt-1">Очирваань</p>
+                        <p className="text-slate-800">Карго: {Number(order.cargoFee || 0)} ₮</p>
                       </div>
                     </td>
                     <td className="px-4 py-6 text-slate-500 font-medium">{order.accountNumber}</td>
                     <td className="px-4 py-6 font-semibold text-center text-slate-600">{order.quantity}</td>
-                    <td className="px-4 py-6 text-center">
-                      <div className="bg-slate-50 border rounded-md px-3 py-1.5 flex justify-between items-center w-[140px] shadow-sm text-slate-600 font-medium mx-auto">
-                        <span>{order.arrivalDate ? new Date(order.arrivalDate).toLocaleDateString() : "-"}</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                      </div>
-                    </td>
-                    <td className="px-4 py-6 text-center">
-                      <div className="bg-slate-50 border rounded-md px-3 py-1.5 flex justify-between items-center w-[140px] shadow-sm text-slate-600 font-medium mx-auto">
-                        <span>{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : "-"}</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                      </div>
-                    </td>
+
                     <td className="px-4 py-6 min-w-[150px] text-center">
                       <div className="flex items-center gap-2 mx-auto w-fit">
                         <StatusBadge status={order.status?.name || "Шинэ"} color={order.status?.color} />

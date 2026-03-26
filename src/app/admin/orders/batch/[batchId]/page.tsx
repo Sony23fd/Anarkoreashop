@@ -39,23 +39,26 @@ export default async function BatchDetailPage({ params }: { params: Promise<{ ba
   return (
     <div className="w-full bg-[#fafafa] min-h-screen p-4 md:p-8 space-y-6">
       {/* Header Card */}
-      <div className="bg-white p-8 rounded-xl shadow-sm border space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">{batch.product?.name}</h1>
+      <div className="bg-white px-6 py-4 rounded-xl shadow-sm border flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">{batch.product?.name}</h1>
+          {batch.description && (
+            <p className="text-sm text-slate-500 mt-1 sm:max-w-md truncate">{batch.description}</p>
+          )}
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm text-slate-600 mt-6">
-          <div className="space-y-4">
-            <div>
-              <p className="text-slate-500 mb-1 font-medium">Захиалгын огноо</p>
-              <p className="font-semibold text-slate-900">{new Date(batch.createdAt).toISOString().split('T')[0]}</p>
-            </div>
-            <div>
-              <p className="text-slate-500 mb-1 font-medium">Тайлбар</p>
-              <p className="font-semibold text-slate-900">{batch.description || "-"}</p>
-            </div>
+        <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+          <div className="bg-blue-50/50 px-3 py-1.5 rounded-md border border-blue-100 flex items-center gap-2">
+            <Package className="w-4 h-4 text-blue-400" />
+            <span>Ширхэг: <strong className="text-blue-700">{activeQuantity}</strong> <span className="text-blue-400 font-normal">/ {totalQuantity}</span></span>
           </div>
-          <div>
-            <p className="text-slate-500 mb-1 font-medium text-right md:text-left">Үүсгэсэн хэрэглэгч</p>
-            {/* Can link to admin user if relations exist. Assuming generic admin for now */}
+          <div className="bg-green-50/50 px-3 py-1.5 rounded-md border border-green-100 flex items-center gap-2">
+            <ClipboardList className="w-4 h-4 text-green-400" />
+            <span>Захиалга: <strong className="text-green-700">{activeOrders.length}</strong> <span className="text-green-400 font-normal">/ {totalOrders}</span></span>
+          </div>
+          <div className="bg-slate-50 px-3 py-1.5 rounded-md border flex items-center gap-2">
+            <span className="text-slate-500">Огноо:</span>
+            <span className="font-semibold text-slate-900">{new Date(batch.createdAt).toISOString().split('T')[0]}</span>
           </div>
         </div>
       </div>
@@ -159,32 +162,7 @@ export default async function BatchDetailPage({ params }: { params: Promise<{ ba
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-[#eff6ff] rounded border-none p-6 flex justify-between items-center bg-gradient-to-r from-[#eef2fe] to-[#e0e7ff] h-28">
-          <div>
-            <p className="text-[#3b82f6] text-sm font-semibold mb-2">Идэвхтэй / Нийт ширхэг</p>
-            <h3 className="text-3xl font-bold text-[#1e3a8a]">
-              {activeQuantity} <span className="text-xl text-[#60a5fa] font-medium">/ {totalQuantity}</span>
-            </h3>
-          </div>
-          <div className="w-14 h-14 bg-cover bg-center" style={{backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%238b5cf6"><path d="M21 16.5c0 .38-.21.71-.53.88l-7.9 4.44c-.16.12-.36.18-.57.18-.21 0-.41-.06-.57-.18l-7.9-4.44A.991.991 0 0 1 3 16.5v-9c0-.38.21-.71.53-.88l7.9-4.44c.16-.12.36-.18.57-.18.21 0 .41.06.57.18l7.9 4.44c.32.17.53.5.53.88v9M12 4.15 6.04 7.5 12 10.85l5.96-3.35L12 4.15M5 15.91l6 3.38v-6.71L5 9.19v6.72m14 0v-6.72l-6 3.39v6.71l6-3.38"/></svg>')`}}>
-            {/* Decorative box icon like the screenshot */}
-          </div>
-        </div>
-        
-        <div className="bg-[#f0fdf4] rounded border-none p-6 flex justify-between items-center bg-gradient-to-r from-[#eefbf4] to-[#dcfce7] h-28">
-          <div>
-            <p className="text-[#22c55e] text-sm font-semibold mb-2">Идэвхтэй / Нийт захиалга</p>
-            <h3 className="text-3xl font-bold text-[#14532d]">
-              {activeOrders.length} <span className="text-xl text-[#86efac] font-medium">/ {totalOrders}</span>
-            </h3>
-          </div>
-          <div className="w-14 h-14 bg-cover bg-center" style={{backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23f59e0b"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2m-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1m2 14H7v-2h7v2m3-4H7v-2h10v2m0-4H7V7h10v2z"/></svg>')`}}>
-            {/* Decorative clipboard icon like the screenshot */}
-          </div>
-        </div>
-      </div>
+
 
       {/* Client Component with Checkboxes */}
       <BatchOrdersClient activeOrders={activeOrders} batch={batch} statuses={statuses || []} />
