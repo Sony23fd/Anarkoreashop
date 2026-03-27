@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Package, ShoppingBag, Search, Activity, ListFilter, CheckCircle, XCircle, Clock, CreditCard, FileText, Truck, Users, Settings, Handshake, PackageCheck, Archive } from "lucide-react"
+import { LayoutDashboard, Package, ShoppingBag, Search, Activity, ListFilter, CheckCircle, XCircle, Clock, CreditCard, FileText, Truck, Users, Settings, Handshake, PackageCheck, Archive, BookOpen } from "lucide-react"
 
 type AdminRole = "ADMIN" | "CARGO_ADMIN"
 
@@ -61,6 +61,7 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
       { name: "Төлбөрийн тохиргоо", url: "/admin/settings/payment", icon: CreditCard, roles: ["ADMIN"] },
       { name: "Нөхцөлийн тохиргоо", url: "/admin/settings/terms", icon: FileText, roles: ["ADMIN"] },
       { name: "Үйлдлийн лог", url: "/admin/activity", icon: FileText, roles: ["ADMIN"] },
+      { name: "Гарын авлага", url: "/admin/guide", icon: BookOpen, roles: ["ADMIN", "CARGO_ADMIN"] },
     ]
   }
 ]
@@ -124,7 +125,7 @@ export function AdminSidebar({ className, role }: { className?: string; role: Ad
         })}
       </nav>
       <div className="p-4 border-t border-slate-100 text-xs text-slate-400 font-medium flex items-center justify-between">
-        <span>© 2026 Nee Otgoo</span>
+        <span>EngiineeR</span>
         <span className="w-2 h-2 rounded-full bg-green-500"></span>
       </div>
     </aside>

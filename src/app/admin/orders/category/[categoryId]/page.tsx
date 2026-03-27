@@ -77,12 +77,7 @@ export default async function CategoryBatchesPage({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
           <CategorySearch />
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Link 
-              href="/admin/orders/completed" 
-              className="inline-flex items-center justify-center rounded-md bg-white border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 shrink-0"
-            >
-              ✅ Дууссан (Түүх)
-            </Link>
+
             {role !== "CARGO_ADMIN" && (
               <CreateBatchSheet categoryId={categoryId} categoryName={category.name} />
             )}

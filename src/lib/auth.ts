@@ -53,7 +53,6 @@ export async function logActivity({
 export const CARGO_ADMIN_ALLOWED_ROUTES = [
   "/admin/orders/batch",
   "/admin/orders/search",
-  "/admin/orders/completed",
   "/admin/orders/category",
 ]
 

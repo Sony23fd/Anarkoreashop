@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/components/ui/use-toast"
-import { Loader2, Plus, Shield, Truck } from "lucide-react"
+import { Loader2, Plus, Shield, Truck, Edit2, Trash2 } from "lucide-react"
 
 interface User {
   id: string
@@ -34,11 +34,32 @@ export function UsersClient({ initialUsers }: { initialUsers: User[] }) {
   const [name, setName] = useState("")
   const [role, setRole] = useState("CARGO_ADMIN")
 
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+
   function resetForm() {
     setEmail("")
     setPassword("")
     setName("")
     setRole("CARGO_ADMIN")
+    setEditingUser(null)
+  }
+
+  function openEditModal(user: User) {
+    setEmail(user.email || "")
+    setPassword("")
+    setName(user.name || "")
+    setRole(user.role)
+    setEditingUser(user)
+    setIsEditModalOpen(true)
+  }
+
+  function openDeleteModal(id: string) {
+    setDeletingUserId(id)
+    setIsDeleteModalOpen(true)
   }
 
   async function handleCreateUser(e: React.FormEvent) {
@@ -68,6 +89,81 @@ export function UsersClient({ initialUsers }: { initialUsers: User[] }) {
       setUsers(prev => [data.user, ...prev])
       setIsModalOpen(false)
       resetForm()
+      router.refresh()
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Алдаа",
+        description: error.message,
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleEditUser(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email || !role || !editingUser) return
+    
+    setIsSubmitting(true)
+    
+    try {
+      const res = await fetch(`/api/admin/users/${editingUser.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, name, role }),
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Шинэчлэхэд алдаа гарлаа")
+      }
+      
+      toast({
+        title: "Амжилттай!",
+        description: "Хэрэглэгчийн мэдээлэл шинэчлэгдлээ.",
+      })
+      
+      setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...u, ...data.user } : u))
+      setIsEditModalOpen(false)
+      resetForm()
+      router.refresh()
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Алдаа",
+        description: error.message,
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleDeleteUser() {
+    if (!deletingUserId) return
+    
+    setIsSubmitting(true)
+    
+    try {
+      const res = await fetch(`/api/admin/users/${deletingUserId}`, {
+        method: "DELETE",
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Устгахад алдаа гарлаа")
+      }
+      
+      toast({
+        title: "Амжилттай!",
+        description: "Хэрэглэгч устгагдлаа.",
+      })
+      
+      setUsers(prev => prev.filter(u => u.id !== deletingUserId))
+      setIsDeleteModalOpen(false)
+      setDeletingUserId(null)
       router.refresh()
     } catch (error: any) {
       toast({
@@ -163,6 +259,106 @@ export function UsersClient({ initialUsers }: { initialUsers: User[] }) {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Modal */}
+        <Dialog open={isEditModalOpen} onOpenChange={(open) => {
+          setIsEditModalOpen(open)
+          if (!open) resetForm()
+        }}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Хэрэглэгч засах</DialogTitle>
+              <DialogDescription>
+                Үндсэн болон Карго админы мэдээллийг өөрчлөх
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleEditUser} className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <label htmlFor="edit-email" className="text-sm font-medium leading-none">Имэйл хаяг</label>
+                <Input 
+                  id="edit-email" 
+                  type="email" 
+                  autoComplete="off"
+                  disabled
+                  value={email} 
+                  placeholder="name@anarshop.mn" 
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="edit-password" className="text-sm font-medium leading-none">Нууц үг (Өөрчлөх бол шинээр бичнэ үү)</label>
+                <Input 
+                  id="edit-password" 
+                  type="password" 
+                  autoComplete="new-password"
+                  value={password} 
+                  onChange={e => setPassword(e.target.value)} 
+                  placeholder="Шинэ нууц үг... (Заавал биш)" 
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="edit-name" className="text-sm font-medium leading-none">Хэрэглэгчийн нэр</label>
+                <Input 
+                  id="edit-name" 
+                  type="text" 
+                  value={name} 
+                  onChange={e => setName(e.target.value)} 
+                  placeholder="Оргил, Бат..." 
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="edit-role" className="text-sm font-medium leading-none">Эрхийн түвшин</label>
+                <Select value={role} onValueChange={(val) => setRole(val as string)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Сонгох..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CARGO_ADMIN">Карго Админ</SelectItem>
+                    <SelectItem value="ADMIN">Үндсэн Админ</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <DialogFooter className="pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => setIsEditModalOpen(false)}
+                  disabled={isSubmitting}
+                >
+                  Цуцлах
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting || !role}
+                  className="bg-[#4e3dc7] hover:bg-indigo-700 font-medium"
+                >
+                  {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  Шинэчлэх
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Modal */}
+        <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Устгахдаа итгэлтэй байна уу?</DialogTitle>
+              <DialogDescription>
+                Та энэ хэрэглэгчийг серверээс бүр мөсөн устгах гэж байна.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="pt-4">
+              <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)} disabled={isSubmitting}>
+                Үгүй, буцах
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteUser} disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Тийм, устгах
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         </div>
       </CardHeader>
       
@@ -174,6 +370,7 @@ export function UsersClient({ initialUsers }: { initialUsers: User[] }) {
               <TableHead className="font-semibold text-slate-700 h-11">Имэйл</TableHead>
               <TableHead className="font-semibold text-slate-700 h-11 text-center">Эрх</TableHead>
               <TableHead className="font-semibold text-slate-700 h-11 text-right">Бүртгүүлсэн</TableHead>
+              <TableHead className="font-semibold text-slate-700 h-11 text-center w-[120px]">Үйлдэл</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -196,11 +393,31 @@ export function UsersClient({ initialUsers }: { initialUsers: User[] }) {
                   <TableCell className="text-right text-slate-500 text-sm">
                     {new Intl.DateTimeFormat('mn-MN', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(user.createdAt))}
                   </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-2">
+                       <Button 
+                         variant="ghost" 
+                         size="icon" 
+                         onClick={() => openEditModal(user)}
+                         className="h-8 w-8 text-slate-500 hover:text-indigo-600 hover:bg-slate-100"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                       </Button>
+                       <Button 
+                         variant="ghost" 
+                         size="icon" 
+                         onClick={() => openDeleteModal(user.id)}
+                         className="h-8 w-8 text-slate-500 hover:text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                       </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center text-slate-500">
+                <TableCell colSpan={5} className="h-24 text-center text-slate-500">
                   Хэрэглэгч олдсонгүй
                 </TableCell>
               </TableRow>

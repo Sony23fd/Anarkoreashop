@@ -767,7 +767,6 @@ export async function restoreGroupOrder(orderIds: string[]) {
     })
 
     revalidatePath("/admin/orders/rejected")
-    revalidatePath("/admin/orders/completed")
     revalidatePath("/admin/orders/pending")
     revalidatePath("/admin/orders")
     revalidatePath("/admin/products")
