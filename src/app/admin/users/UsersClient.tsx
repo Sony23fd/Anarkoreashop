@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/components/ui/use-toast"
-import { Loader2, Plus, Shield, Truck, Edit2, Trash2 } from "lucide-react"
+import { Loader2, Plus, Shield, Truck, Database, Edit2, Trash2 } from "lucide-react"
 
 interface User {
   id: string
@@ -383,6 +383,10 @@ export function UsersClient({ initialUsers }: { initialUsers: User[] }) {
                     {user.role === "ADMIN" ? (
                       <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-none px-2.5 py-0.5">
                         <Shield className="w-3 h-3 mr-1" /> Бааз Админ
+                      </Badge>
+                    ) : user.role === "DATAADMIN" ? (
+                      <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-none px-2.5 py-0.5">
+                        <Database className="w-3 h-3 mr-1" /> Дата Админ
                       </Badge>
                     ) : (
                       <Badge className="bg-sky-100 text-sky-700 hover:bg-sky-200 border-none px-2.5 py-0.5">

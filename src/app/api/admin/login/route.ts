@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Имэйл эсвэл нууц үг буруу байна" }, { status: 401 })
     }
 
-    const allowedRoles = ["ADMIN", "CARGO_ADMIN"]
+    const allowedRoles = ["ADMIN", "CARGO_ADMIN", "DATAADMIN"]
     if (!allowedRoles.includes(user.role)) {
       return NextResponse.json({ error: "Энэ хэрэглэгч нь adminы эрхгүй байна" }, { status: 403 })
     }
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       userId: user.id,
       email: user.email!,
       name: user.name || user.email!,
-      role: user.role as "ADMIN" | "CARGO_ADMIN",
+      role: user.role as "ADMIN" | "CARGO_ADMIN" | "DATAADMIN",
     }, rememberMe)
 
     return NextResponse.json({ success: true, role: user.role })

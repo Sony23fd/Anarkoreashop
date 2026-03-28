@@ -2,22 +2,37 @@ import { getDeliveryOrders } from "@/app/actions/order-actions"
 import { Truck, Package, User } from "lucide-react"
 import { DeliveryGroupCard } from "./DeliveryGroupCard"
 import { DeliveryFilter } from "./DeliveryFilter"
+import { ListSearchFilter } from "@/components/admin/ListSearchFilter"
 
 export const dynamic = "force-dynamic"
 
 export default async function DeliveryQueuePage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string }>
+  searchParams: Promise<{ date?: string, q?: string }>
 }) {
   const resolvedParams = await searchParams
   const dateFilter = resolvedParams.date
+  const q = resolvedParams.q?.toLowerCase() || ""
 
   const { orders } = await getDeliveryOrders(dateFilter)
+  
+  let filteredOrders = orders || []
+  if (q) {
+    filteredOrders = filteredOrders.filter((o: any) => 
+      o.customerName?.toLowerCase().includes(q) ||
+      o.customerPhone?.includes(q) ||
+      o.accountNumber?.toLowerCase().includes(q) ||
+      o.batch?.product?.name?.toLowerCase().includes(q) ||
+      o.deliveryAddress?.toLowerCase().includes(q) ||
+      o.orderNumber?.toString().includes(q) ||
+      o.transactionRef?.toLowerCase().includes(q)
+    )
+  }
 
   // Group by customerPhone
   const grouped: Record<string, any[]> = {}
-  for (const order of (orders || [])) {
+  for (const order of filteredOrders) {
     const key = order.customerPhone || order.id
     if (!grouped[key]) grouped[key] = []
     grouped[key].push(order)
@@ -36,7 +51,10 @@ export default async function DeliveryQueuePage({
             {dateFilter ? <strong>{dateFilter}</strong> : "Нийт"} өдөрт хүргэлт шаардлагатай <strong>{orders?.length || 0}</strong> ширхэг бараа — <strong>{groups.length}</strong> багц
           </p>
         </div>
-        <DeliveryFilter />
+        <div className="flex items-center gap-2">
+          <ListSearchFilter />
+          <DeliveryFilter />
+        </div>
       </div>
 
       {groups.length === 0 ? (

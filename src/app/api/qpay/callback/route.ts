@@ -79,11 +79,29 @@ async function handleCallback(request: Request) {
       }
     }
 
+    // Find or create the web confirmed status
+    let webConfirmedStatus = await db.orderStatusType.findFirst({
+      where: { name: "Захиалга баталгаажсан /Вэбээр/" }
+    });
+    
+    if (!webConfirmedStatus) {
+      webConfirmedStatus = await db.orderStatusType.create({
+        data: {
+          name: "Захиалга баталгаажсан /Вэбээр/",
+          color: "blue",
+          isDefault: false,
+          isFinal: false,
+          isDeliverable: true
+        }
+      });
+    }
+
     // Update orders in DB
     await (db.order as any).updateMany({
       where: { transactionRef },
       data: {
         paymentStatus: "CONFIRMED",
+        statusId: webConfirmedStatus.id,
         ebarimtId: ebarimtId,
         ebarimtQr: ebarimtQr,
         ebarimtLottery: ebarimtLottery

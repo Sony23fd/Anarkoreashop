@@ -7,6 +7,15 @@ import type { AdminSessionData } from "@/lib/session"
 const CARGO_ADMIN_ALLOWED_ROUTES = [
   "/admin/home",
   "/admin/orders",
+  "/admin/cargo-settings",
+]
+
+const DATAADMIN_ALLOWED_ROUTES = [
+  "/admin/home",
+  "/admin/data-center",
+  "/admin/activity",
+  "/admin/users",
+  "/admin/settings",
 ]
 
 // We can't import from src/lib directly in middleware (edge runtime), so inline constants
@@ -61,6 +70,15 @@ export async function middleware(request: NextRequest) {
     const isAllowed = CARGO_ADMIN_ALLOWED_ROUTES.some(r => pathname.startsWith(r))
     if (!isAllowed) {
       const fallback = new URL("/admin/orders/search", request.url)
+      return NextResponse.redirect(fallback)
+    }
+  }
+
+  // Check role-based access for DATAADMIN
+  if (session.role === "DATAADMIN") {
+    const isAllowed = DATAADMIN_ALLOWED_ROUTES.some(r => pathname.startsWith(r))
+    if (!isAllowed) {
+      const fallback = new URL("/admin/data-center", request.url)
       return NextResponse.redirect(fallback)
     }
   }

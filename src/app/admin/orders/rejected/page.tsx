@@ -1,18 +1,33 @@
 import { getRejectedOrders } from "@/app/actions/order-actions"
 import { GroupRejectedActions } from "./GroupRejectedActions"
 import { DateRangeFilter } from "@/components/admin/DateRangeFilter"
+import { ListSearchFilter } from "@/components/admin/ListSearchFilter"
 import { ArchiveX, Package, Truck, User } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
-export default async function RejectedOrdersPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
+export default async function RejectedOrdersPage({ searchParams }: { searchParams: Promise<{ days?: string, q?: string }> }) {
   const p = await searchParams;
   const days = p.days ? parseInt(p.days, 10) : 30;
+  const q = p.q?.toLowerCase() || "";
   const { orders } = await getRejectedOrders(days)
+
+  let filteredOrders = orders || []
+  if (q) {
+    filteredOrders = filteredOrders.filter((o: any) => 
+      o.customerName?.toLowerCase().includes(q) ||
+      o.customerPhone?.includes(q) ||
+      o.accountNumber?.toLowerCase().includes(q) ||
+      o.batch?.product?.name?.toLowerCase().includes(q) ||
+      o.deliveryAddress?.toLowerCase().includes(q) ||
+      o.orderNumber?.toString().includes(q) ||
+      o.transactionRef?.toLowerCase().includes(q)
+    )
+  }
 
   // Group by transactionRef (same cart = same ref) then by customerPhone
   const grouped: Record<string, any[]> = {}
-  for (const order of (orders || [])) {
+  for (const order of filteredOrders) {
     const key = order.transactionRef || order.customerPhone || order.id
     if (!grouped[key]) grouped[key] = []
     grouped[key].push(order)
@@ -28,10 +43,11 @@ export default async function RejectedOrdersPage({ searchParams }: { searchParam
             Цуцлагдсан захиалга
           </h1>
           <p className="text-slate-500 text-sm mt-1">
-            Нийт <strong>{orders?.length || 0}</strong> цуцлагдсан барааны захиалга — <strong>{groups.length}</strong> бүлэг
+            Нийт <strong>{filteredOrders.length}</strong> цуцлагдсан барааны захиалга — <strong>{groups.length}</strong> бүлэг
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <ListSearchFilter />
           <DateRangeFilter days={days} />
         </div>
       </div>

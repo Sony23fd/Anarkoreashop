@@ -10,9 +10,13 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   bank_holder: "",
   bank_note: "Anar Korea Shop",
   terms_of_service: "Захиалгаа баталгаажуулсны дараа цуцлах боломжгүй. Бараа зургаас арай ялгаатай байж болно. Асуудал гарвал бидэнтэй холбогдоно уу.",
-  delivery_terms: "Хүргэлт нь Улаанбаатар хот дотор үйлчилнэ. Буруу хаяг оруулсны улмаас хүргэгдэж чадаагүй тохиолдолд бид хариуцлага хүлээхгүй. Хүргэлтийн нэмэлт зардал нь захиалгын нийт үнэд тооцогдоно.",
+  delivery_terms: "Хүргэлт нь Улаанбаатар хот дотор үйлчилнэ. Буруу хаяг оруулсны улмаас хүргэлт хийгдээгүй тохиолдолд бид хариуцлага хүлээхгүй. Хүргэлтийн нэмэлт зардал нь захиалгын нийт үнэд тооцогдоно.",
   qpay_enabled: "true",
-  delivery_fee: "6000"
+  delivery_fee: "6000",
+  cargo_bank_name: "Хаан Банк",
+  cargo_bank_account: "",
+  cargo_bank_holder: "",
+  cargo_payment_instruction: "Гүйлгээний утга дээр утасныхаа дугаарыг заавал бичнэ үү."
 }
 
 export async function getShopSettings(): Promise<Record<string, string>> {
@@ -45,7 +49,15 @@ export async function saveShopSetting(key: string, value: string) {
 export async function getPendingOrders() {
   try {
     const orders = await db.order.findMany({
-      where: { paymentStatus: "PENDING" } as any,
+      where: {
+        OR: [
+          { paymentStatus: "PENDING" },
+          { 
+             paymentStatus: "CONFIRMED", 
+             status: { name: "Захиалга баталгаажсан /Вэбээр/" }
+          }
+        ]
+      } as any,
       include: {
         batch: { include: { product: true } },
         status: true

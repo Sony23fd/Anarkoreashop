@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { getBatchById } from "@/app/actions/batch-actions"
 import { getOrderStatuses } from "@/app/actions/order-actions"
 import { StatusBadge } from "@/components/admin/StatusBadge"
+import { getCurrentAdmin } from "@/lib/auth"
 import { 
   Sheet, 
   SheetContent, 
@@ -20,9 +21,10 @@ import { BatchOrdersClient } from "./BatchOrdersClient"
 export default async function BatchDetailPage({ params }: { params: Promise<{ batchId: string }> }) {
   const { batchId } = await params;
   
-  const [{ batch, success }, { statuses }] = await Promise.all([
+  const [{ batch, success }, { statuses }, admin] = await Promise.all([
     getBatchById(batchId),
-    getOrderStatuses()
+    getOrderStatuses(),
+    getCurrentAdmin()
   ])
 
   if (!success || !batch) {
@@ -165,7 +167,7 @@ export default async function BatchDetailPage({ params }: { params: Promise<{ ba
 
 
       {/* Client Component with Checkboxes */}
-      <BatchOrdersClient activeOrders={activeOrders} batch={batch} statuses={statuses || []} />
+      <BatchOrdersClient activeOrders={activeOrders} batch={batch} statuses={statuses || []} role={admin?.role || "CARGO_ADMIN"} />
     </div>
   )
 }

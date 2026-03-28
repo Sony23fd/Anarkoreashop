@@ -9,6 +9,7 @@ export async function getOrders() {
   try {
     const orders = await db.order.findMany({
       where: {
+        paymentStatus: { not: "REJECTED" },
         OR: [
           { statusId: null },
           { status: { isFinal: false } }
@@ -92,6 +93,7 @@ export async function getDeliveredOrders(days: number = 30) {
 export async function getDeliveryOrders(date?: string) {
   try {
     const whereClause: any = { 
+      paymentStatus: "CONFIRMED", // Must be confirmed by Main Admin first
       wantsDelivery: true,
       deliveryAddress: { not: "" },
       status: { isFinal: false }
@@ -379,6 +381,7 @@ export async function addOrderToBatch(batchId: string, data: {
 export async function searchOrders(query?: string) {
   try {
     const activeFilter = {
+      paymentStatus: { not: "REJECTED" },
       OR: [
         { statusId: null },
         { status: { isFinal: false } }
@@ -589,53 +592,17 @@ export async function requestDelivery(orderIds: string[], deliveryAddress: strin
       return { success: true, directlyConfirmed: true }
     }
 
-    if (!qpayEnabled) {
-      // Return manual instruction data instead of updating DB immediately
-      return { 
-        success: true, 
-        isManual: true, 
-        manualData: { 
-          fee: deliveryFee,
-          bank_name: settings.bank_name || "",
-          bank_account: settings.bank_account || "",
-          bank_holder: settings.bank_holder || "",
-          bank_note: settings.bank_note || ""
-        }
-      }
-    }
-
-    // Generate QPay Invoice
-    const { createQPayInvoice } = await import("@/lib/qpay")
-    const deliveryRef = `DEL-${eligibleOrders[0].orderNumber}-${Date.now().toString().slice(-4)}`
-    
-    const invoiceRes = await createQPayInvoice({
-      transactionRef: deliveryRef,
-      amount: deliveryFee,
-      description: `AnarKoreaShop - Хүргэлтийн хураамж (Order #${eligibleOrders[0].orderNumber} + ${eligibleOrders.length - 1} бүлэг)`
-    })
-
-    if (!invoiceRes.success || !invoiceRes.data) {
-      return { success: false, error: invoiceRes.error || "QPay нэхэмжлэх үүсгэхэд алдаа гарлаа" }
-    }
-
-    const { invoice_id, qr_text, urls } = invoiceRes.data
-
-    await (db.order as any).updateMany({
-      where: { id: { in: eligibleIds } },
-      data: {
-        deliveryAddress: deliveryAddress.trim(),
-        deliveryQpayInvoiceId: invoice_id,
-        deliveryRequestedAt: new Date()
-      }
-    })
-
-    revalidatePath("/track")
+    // Force Cargo Manual Bank Transfer for Delivery Fee, bypassing QPay entirely
     return { 
       success: true, 
-      qpayQrText: qr_text, 
-      qpayUrls: urls,
-      invoiceId: invoice_id,
-      eligibleIds
+      isManual: true, 
+      manualData: { 
+        fee: deliveryFee,
+        bank_name: settings.cargo_bank_name || "",
+        bank_account: settings.cargo_bank_account || "",
+        bank_holder: settings.cargo_bank_holder || "",
+        bank_note: settings.cargo_payment_instruction || "Гүйлгээний утга дээр утасны дугаараа бичнэ үү"
+      }
     }
   } catch (err: any) {
     console.error("requestDelivery error:", err)
@@ -835,5 +802,96 @@ export async function restoreCompletedOrder(orderId: string) {
   } catch(err: any) {
     console.error("restoreCompletedOrder error:", err)
     return { success: false, error: err.message }
+  }
+}
+
+export async function updateOrderDetails(orderId: string, data: {
+  customerName: string
+  customerPhone: string
+  accountNumber: string
+  quantity: number
+  deliveryAddress: string
+}) {
+  try {
+    const adminMode = await getCurrentAdmin()
+    if (!adminMode) return { success: false, error: "Хандах эрхгүй" }
+
+    const result = await db.$transaction(async (tx) => {
+      const order = await (tx.order as any).findUnique({ where: { id: orderId } });
+      if (!order) throw new Error("Захиалга олдсонгүй");
+
+      const diffQty = data.quantity - (order.quantity || 0);
+      if (diffQty !== 0) {
+         await (tx.batch as any).update({
+            where: { id: order.batchId },
+            data: { remainingQuantity: { decrement: diffQty } }
+         });
+      }
+
+      await (tx.order as any).update({
+        where: { id: orderId },
+        data: {
+           customerName: data.customerName,
+           customerPhone: data.customerPhone,
+           accountNumber: data.accountNumber,
+           quantity: data.quantity,
+           deliveryAddress: data.deliveryAddress
+        }
+      });
+    });
+
+    await logActivity({
+      userId: adminMode.id,
+      userName: adminMode.name || "Админ",
+      userRole: adminMode.role,
+      action: "Захиалга засав",
+      target: "Захиалга",
+      detail: `Захиалга #${orderId} мэдээллийг өөрчиллөө`,
+    })
+
+    revalidatePath("/admin/orders")
+    revalidatePath("/admin/orders/search")
+    revalidatePath("/admin/orders/batch/[batchId]", "page")
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, error: error.message }
+  }
+}
+
+export async function deleteOrder(orderId: string) {
+  try {
+    const adminMode = await getCurrentAdmin()
+    if (!adminMode || adminMode.role !== "ADMIN") return { success: false, error: "Устгах эрхгүй байна" }
+
+    const result = await db.$transaction(async (tx) => {
+      const order = await (tx.order as any).findUnique({ where: { id: orderId } });
+      if (!order) throw new Error("Захиалга олдсонгүй");
+
+      // Revert quantity if order was not rejected
+      if (order.paymentStatus !== "REJECTED" && order.quantity > 0) {
+         await (tx.batch as any).update({
+            where: { id: order.batchId },
+            data: { remainingQuantity: { increment: order.quantity } }
+         });
+      }
+
+      await (tx.order as any).delete({ where: { id: orderId } });
+    });
+
+    await logActivity({
+      userId: adminMode.id,
+      userName: adminMode.name || "Админ",
+      userRole: adminMode.role,
+      action: "Захиалга устгав",
+      target: "Захиалга",
+      detail: `Захиалга #${orderId} бүрмөсөн устгагдлаа`,
+    })
+
+    revalidatePath("/admin/orders")
+    revalidatePath("/admin/orders/search")
+    revalidatePath("/admin/orders/batch/[batchId]", "page")
+    return { success: true }
+  } catch (error: any) {
+    return { success: false, error: error.message }
   }
 }

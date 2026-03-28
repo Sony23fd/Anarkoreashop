@@ -3,9 +3,9 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Package, ShoppingBag, Search, Activity, ListFilter, CheckCircle, XCircle, Clock, CreditCard, FileText, Truck, Users, Settings, Handshake, PackageCheck, Archive, BookOpen } from "lucide-react"
+import { LayoutDashboard, Package, ShoppingBag, Search, Activity, ListFilter, CheckCircle, XCircle, Clock, CreditCard, FileText, Truck, Users, Settings, Handshake, PackageCheck, Archive, BookOpen, Database } from "lucide-react"
 
-type AdminRole = "ADMIN" | "CARGO_ADMIN"
+type AdminRole = "ADMIN" | "CARGO_ADMIN" | "DATAADMIN"
 
 interface SidebarItem {
   name: string
@@ -24,7 +24,7 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "ҮНДСЭН",
     items: [
-      { name: "Хянах самбар", url: "/admin/home", icon: LayoutDashboard, roles: ["ADMIN", "CARGO_ADMIN"] },
+      { name: "Хянах самбар", url: "/admin/home", icon: LayoutDashboard, roles: ["ADMIN", "CARGO_ADMIN", "DATAADMIN"] },
       { name: "Хайх (Данс, Утас)", url: "/admin/orders/search", icon: Search, roles: ["ADMIN", "CARGO_ADMIN"] },
     ]
   },
@@ -56,11 +56,13 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "СИСТЕМ & ТОХИРГОО",
     items: [
       { name: "Захиалгын статус", url: "/admin/order-status", icon: Activity, roles: ["ADMIN"] },
-      { name: "Хэрэглэгчид", url: "/admin/users", icon: Users, roles: ["ADMIN"] },
+      { name: "Өгөгдлийн төв", url: "/admin/data-center", icon: Database, highlight: true, roles: ["DATAADMIN"] },
+      { name: "Хэрэглэгчид", url: "/admin/users", icon: Users, roles: ["ADMIN", "DATAADMIN"] },
       { name: "Ерөнхий тохиргоо", url: "/admin/settings/general", icon: Settings, roles: ["ADMIN"] },
       { name: "Төлбөрийн тохиргоо", url: "/admin/settings/payment", icon: CreditCard, roles: ["ADMIN"] },
+      { name: "Карго төлбөр", url: "/admin/cargo-settings", icon: CreditCard, highlight: true, roles: ["CARGO_ADMIN"] },
       { name: "Нөхцөлийн тохиргоо", url: "/admin/settings/terms", icon: FileText, roles: ["ADMIN"] },
-      { name: "Үйлдлийн лог", url: "/admin/activity", icon: FileText, roles: ["ADMIN"] },
+      { name: "Үйлдлийн лог", url: "/admin/activity", icon: FileText, roles: ["ADMIN", "DATAADMIN"] },
       { name: "Гарын авлага", url: "/admin/guide", icon: BookOpen, roles: ["ADMIN", "CARGO_ADMIN"] },
     ]
   }
@@ -84,6 +86,12 @@ export function AdminSidebar({ className, role }: { className?: string; role: Ad
           <div className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 rounded-md px-2.5 py-1 w-max">
             <Truck className="w-3.5 h-3.5" />
             Карго Админ
+          </div>
+        )}
+        {role === "DATAADMIN" && (
+          <div className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 rounded-md px-2.5 py-1 w-max">
+            <Database className="w-3.5 h-3.5" />
+            Дата Админ
           </div>
         )}
       </div>

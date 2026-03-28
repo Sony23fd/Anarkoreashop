@@ -4,16 +4,18 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { StatusBadge } from "@/components/admin/StatusBadge"
-import { updateBatchOrderStatusesByIds } from "@/app/actions/order-actions"
+import { updateBatchOrderStatusesByIds, updateOrderDetails, deleteOrder } from "@/app/actions/order-actions"
 import { useToast } from "@/components/ui/use-toast"
 import { GroupAdminDeliveryButton } from "../../search/GroupAdminDeliveryButton"
-import { Loader2 } from "lucide-react"
+import { Loader2, Pencil, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 
-export function BatchOrdersClient({ activeOrders, batch, statuses }: { activeOrders: any[], batch: any, statuses: any[] }) {
+export function BatchOrdersClient({ activeOrders, batch, statuses, role }: { activeOrders: any[], batch: any, statuses: any[], role: string }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState("")
+  const [editingOrder, setEditingOrder] = useState<any>(null)
   const { toast } = useToast()
   const router = useRouter()
 
@@ -30,6 +32,37 @@ export function BatchOrdersClient({ activeOrders, batch, statuses }: { activeOrd
 
   function toggleOne(id: string) {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  async function handleEditOrder(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    const form = new FormData(e.target as HTMLFormElement)
+    const data = {
+      customerName: form.get("customerName") as string,
+      customerPhone: form.get("customerPhone") as string,
+      accountNumber: form.get("accountNumber") as string,
+      quantity: Number(form.get("quantity") || 1),
+      deliveryAddress: form.get("deliveryAddress") as string,
+    }
+    const res = await updateOrderDetails(editingOrder.id, data)
+    setLoading(false)
+    if (res.success) {
+      toast({ title: "Амжилттай" })
+      setEditingOrder(null)
+      router.refresh()
+    } else toast({ variant: "destructive", title: "Алдаа", description: res.error || "Алдаа" })
+  }
+
+  async function handleDeleteOrder(id: string) {
+    if (!confirm("Энэ захиалгыг бүрмөсөн устгах уу?")) return
+    setLoading(true)
+    const res = await deleteOrder(id)
+    setLoading(false)
+    if (res.success) {
+      toast({ title: "Устгагдлаа" })
+      router.refresh()
+    } else toast({ variant: "destructive", title: "Алдаа", description: res.error || "Алдаа" })
   }
 
   async function handleBulkUpdate(e: React.FormEvent) {
@@ -113,6 +146,7 @@ export function BatchOrdersClient({ activeOrders, batch, statuses }: { activeOrd
               <th className="px-4 py-3 text-center">Статус &nbsp;</th>
               <th className="px-4 py-3 text-center">Хаяг &nbsp;</th>
               <th className="px-4 py-3 text-center">Карго үнэ &nbsp;</th>
+              <th className="px-4 py-3 text-center">Үйлдэл &nbsp;</th>
             </tr>
           </thead>
           <tbody className="divide-y relative">
@@ -162,6 +196,16 @@ export function BatchOrdersClient({ activeOrders, batch, statuses }: { activeOrd
                   <td className="px-4 py-6 text-center">
                      <span className="font-semibold text-slate-800">{finalCargoFee.toLocaleString()} ₮</span>
                   </td>
+                  <td className="px-4 py-6 text-center space-x-2 whitespace-nowrap">
+                    <Button variant="outline" size="icon" className="h-8 w-8 text-indigo-600 border-indigo-200 hover:bg-indigo-50" onClick={(e) => { e.stopPropagation(); setEditingOrder(order); }}>
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    {role === "ADMIN" && (
+                    <Button variant="outline" size="icon" className="h-8 w-8 text-red-600 border-red-200 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); handleDeleteOrder(order.id); }}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                    )}
+                  </td>
                 </tr>
               )})
             ) : (
@@ -174,6 +218,44 @@ export function BatchOrdersClient({ activeOrders, batch, statuses }: { activeOrd
           </tbody>
         </table>
       </div>
+
+      <Sheet open={!!editingOrder} onOpenChange={(open) => !open && !loading && setEditingOrder(null)}>
+        <SheetContent className="overflow-y-auto sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Захиалга засах</SheetTitle>
+          </SheetHeader>
+          {editingOrder && (
+            <form onSubmit={handleEditOrder} className="space-y-4 mt-6 text-left">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Хэрэглэгчийн нэр</label>
+                <Input name="customerName" required defaultValue={editingOrder.customerName} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Утасны дугаар</label>
+                <Input name="customerPhone" required defaultValue={editingOrder.customerPhone} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Дансны дугаар</label>
+                  <Input name="accountNumber" defaultValue={editingOrder.accountNumber || ""} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Тоо ширхэг</label>
+                  <Input name="quantity" type="number" required min="1" defaultValue={editingOrder.quantity} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Хүргэлтийн хаяг</label>
+                <Input name="deliveryAddress" defaultValue={editingOrder.deliveryAddress || ""} />
+              </div>
+              <Button type="submit" disabled={loading} className="w-full bg-[#4F46E5] mt-4">
+                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Хадгалах
+              </Button>
+            </form>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

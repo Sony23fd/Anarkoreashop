@@ -34,13 +34,14 @@ export default function DeliveryRequestButton({ orderIds }: { orderIds: string[]
     const res = await requestDelivery(orderIds, address)
     setLoading(false)
     if (res.success) {
-      if (res.directlyConfirmed) {
+      const data = res as any;
+      if (data.directlyConfirmed) {
         setDone(true)
         setOpen(false)
-      } else if (res.isManual) {
-        setManualData(res.manualData)
-      } else if (res.invoiceId) {
-        setQrData({ text: res.qpayQrText, urls: res.qpayUrls, invoiceId: res.invoiceId })
+      } else if (data.isManual) {
+        setManualData(data.manualData)
+      } else if (data.invoiceId) {
+        setQrData({ text: data.qpayQrText, urls: data.qpayUrls, invoiceId: data.invoiceId })
       }
     } else {
       setError(res.error || "Алдаа гарлаа")
@@ -94,7 +95,7 @@ export default function DeliveryRequestButton({ orderIds }: { orderIds: string[]
       <div className="space-y-4 bg-white rounded-xl border p-5 shadow-sm animate-in fade-in">
         <div className="text-center mb-4">
            <p className="font-bold text-slate-800 text-[15px]">Хүргэлтийн хураамж төлөх</p>
-           <p className="text-xs text-slate-500 mt-1">Доорх данс руу шилжүүлгэ хийж баталгаажуулна уу</p>
+           <p className="text-xs text-slate-500 mt-1">{manualData.bank_note || "Доорх данс руу шилжүүлгэ хийж баталгаажуулна уу"}</p>
         </div>
         
         <div className="bg-yellow-50 text-yellow-800 p-4 rounded-xl border border-yellow-200 text-sm space-y-3">

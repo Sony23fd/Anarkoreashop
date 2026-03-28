@@ -8,7 +8,7 @@ import { db } from "@/lib/db"
 export async function getCurrentAdmin() {
   const session = await getSession()
   if (!session.isLoggedIn || !session.userId) return null
-  if (session.role !== "ADMIN" && session.role !== "CARGO_ADMIN") return null
+  if (session.role !== "ADMIN" && session.role !== "CARGO_ADMIN" && session.role !== "DATAADMIN") return null
   return {
     id: session.userId,
     email: session.email,
@@ -54,12 +54,24 @@ export const CARGO_ADMIN_ALLOWED_ROUTES = [
   "/admin/orders/batch",
   "/admin/orders/search",
   "/admin/orders/category",
+  "/admin/cargo-settings",
+]
+
+export const DATAADMIN_ALLOWED_ROUTES = [
+  "/admin/home",
+  "/admin/data-center",
+  "/admin/activity",
+  "/admin/users",
+  "/admin/settings",
 ]
 
 export function isRouteAllowedForRole(pathname: string, role: string): boolean {
   if (role === "ADMIN") return true
   if (role === "CARGO_ADMIN") {
     return CARGO_ADMIN_ALLOWED_ROUTES.some(r => pathname.startsWith(r))
+  }
+  if (role === "DATAADMIN") {
+    return DATAADMIN_ALLOWED_ROUTES.some(r => pathname.startsWith(r))
   }
   return false
 }
